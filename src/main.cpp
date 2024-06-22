@@ -16,8 +16,8 @@ int main() {
 	Renderer renderer;
 	renderer.initialize();
 	
-	ModelLoader model_loader;
-	model_loader.load_model();
+	ModelLoader modelLoader;
+	modelLoader.loadModel();
 
 
 

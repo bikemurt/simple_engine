@@ -7,11 +7,11 @@ class ModelLoader {
 
 private:
     
-    std::string get_file_path_extension(const std::string &fileName);
+    std::string getFilePathExtension(const std::string &fileName);
 
 public:
 
-    void load_model();
+    void loadModel();
 
 };
 
