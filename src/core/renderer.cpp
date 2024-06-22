@@ -2,25 +2,26 @@
 
 #include "fmt/format.h"
 
+bool Renderer::showStats = false;
+
 GLFWwindow* Renderer::getWindow() {
     return p_window;
 }
 
-int Renderer::getDisplayWidth() {
-    return displayWidth;
+void Renderer::glfw_keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+	if (key == GLFW_KEY_F1 && action == GLFW_RELEASE) {
+		showStats = !showStats;
+	}
 }
 
-int Renderer::getDisplayHeight() {
-    return displayHeight;
-}
-
-void Renderer::initialize() {
+void Renderer::setup()
+{
 
     glfwSetErrorCallback([](int error, const char* description) {
-        fprintf(stderr, "Glfw error %d: %s\n", error, description);
+		fmt::println(stderr, "Glfw error {}: {}", error, description);
     });
 
-    glfwInit();
+	if (!glfwInit()) return;
 
 	// GL 3.0 + GLSL 130
 	const char* glsl_version = "#version 130";
@@ -29,57 +30,72 @@ void Renderer::initialize() {
 
 	// Create window with graphics context
 
+	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+
 	p_window = glfwCreateWindow(800, 600, "My GLFW Window", nullptr, nullptr);
-	glfwMakeContextCurrent(p_window);
-	glfwSwapInterval(1); // Enable vsync
+	if (!p_window) return;
+	
+	glfwSetKeyCallback(p_window, glfw_keyCallback);
 
-	// Initialize OpenGL loader
-	glewInit();
+	bgfx::renderFrame();
 
-	// Setup Dear ImGui context
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
+	bgfx::Init init;
+#if BX_PLATFORM_LINUX || BX_PLATFORM_BSD
+	init.platformData.ndt = glfwGetX11Display();
+	init.platformData.nwh = (void*)(uintptr_t)glfwGetX11Window(p_window);
+#elif BX_PLATFORM_OSX
+	init.platformData.nwh = glfwGetCocoaWindow(p_window);
+#elif BX_PLATFORM_WINDOWS
+	init.platformData.nwh = glfwGetWin32Window(p_window);
+#endif
+	glfwGetWindowSize(p_window, &windowWidth, &windowHeight);
+	init.resolution.width = (uint32_t)windowWidth;
+	init.resolution.height = (uint32_t)windowHeight;
+	init.resolution.reset = BGFX_RESET_VSYNC;
+	if (!bgfx::init(init)) {
+		return;
+	}
 
-	// Setup Dear ImGui style
-	ImGui::StyleColorsDark();
-
-	// Setup Platform/Renderer bindings
-	ImGui_ImplGlfw_InitForOpenGL(p_window, true);
-	ImGui_ImplOpenGL3_Init(glsl_version);
-
-	// Main loop
-	glfwGetFramebufferSize(p_window, &displayWidth, &displayHeight);
-
+	// Set view 0 to the same dimensions as the window and to clear the color buffer.
+	
+	bgfx::setViewClear(kClearView, BGFX_CLEAR_COLOR);
+	bgfx::setViewRect(kClearView, 0, 0, bgfx::BackbufferRatio::Equal);
 }
 
-void Renderer::pollEvents() {
-    // Poll and handle events (inputs, window resize, etc.)
+void Renderer::renderFrame() {
+
     glfwPollEvents();
-}
 
-void Renderer::startGUI() {
-    // Start the Dear ImGui frame
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-}
+	int oldWidth = windowWidth;
+	int oldHeight = windowHeight;
+	glfwGetWindowSize(p_window, &windowWidth, &windowHeight);
+	
+	if (windowWidth != oldWidth || windowHeight != oldHeight) {
+		bgfx::reset((uint32_t)windowWidth, (uint32_t)windowHeight, BGFX_RESET_VSYNC);
+		bgfx::setViewRect(kClearView, 0, 0, bgfx::BackbufferRatio::Equal);
+	}
 
-void Renderer::renderInit() {
-    ImGui::Render();
-
-    glfwGetFramebufferSize(p_window, &displayWidth, &displayHeight);
-    glViewport(0, 0, displayWidth, displayHeight);
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    glfwSwapBuffers(p_window);
+	// This dummy draw call is here to make sure that view 0 is cleared if no other draw calls are submitted to view 0.
+	bgfx::touch(kClearView);
+	// Use debug font to print information about this example.
+	bgfx::dbgTextClear();
+	
+	bgfx::dbgTextPrintf(0, 0, 0x0f, "Press F1 to toggle stats.");
+	bgfx::dbgTextPrintf(0, 1, 0x0f, "Color can be changed with ANSI \x1b[9;me\x1b[10;ms\x1b[11;mc\x1b[12;ma\x1b[13;mp\x1b[14;me\x1b[0m code too.");
+	bgfx::dbgTextPrintf(80, 1, 0x0f, "\x1b[;0m    \x1b[;1m    \x1b[; 2m    \x1b[; 3m    \x1b[; 4m    \x1b[; 5m    \x1b[; 6m    \x1b[; 7m    \x1b[0m");
+	bgfx::dbgTextPrintf(80, 2, 0x0f, "\x1b[;8m    \x1b[;9m    \x1b[;10m    \x1b[;11m    \x1b[;12m    \x1b[;13m    \x1b[;14m    \x1b[;15m    \x1b[0m");
+	const bgfx::Stats* stats = bgfx::getStats();
+	bgfx::dbgTextPrintf(0, 2, 0x0f, "Backbuffer %dW x %dH in pixels, debug text %dW x %dH in characters.", stats->width, stats->height, stats->textWidth, stats->textHeight);
+	
+	// Enable stats or debug text.
+	bgfx::setDebug(showStats ? BGFX_DEBUG_STATS : BGFX_DEBUG_TEXT);
+	
+	// Advance to next frame. Process submitted rendering primitives.
+	bgfx::frame();
 }
 
 void Renderer::cleanup() {
-	// Cleanup
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
+	bgfx::shutdown();
 
 	glfwDestroyWindow(p_window);
 	glfwTerminate();
