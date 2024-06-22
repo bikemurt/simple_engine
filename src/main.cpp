@@ -19,6 +19,8 @@ int main() {
 	ModelLoader model_loader;
 	model_loader.load_model();
 
+
+
 	fmt::println("loop starting");
 
 	while (!glfwWindowShouldClose(renderer.getWindow())) {
