@@ -1,0 +1,36 @@
+{
+    "name": "vcpkg-test",
+    "version": "0.0.0",
+    "dependencies": [
+        {
+            "name": "fmt",
+            "version>=": "10.2.1"
+        },
+        {
+            "name": "imgui",
+            "version>=": "1.90.7",
+            "features": ["glfw-binding", "opengl3-binding"]
+        },
+        {
+            "name": "glfw3",
+            "version>=": "3.4"
+        },
+        {
+            "name": "glew",
+            "version>=": "2.2.0#3"
+        },
+        {
+            "name": "tinygltf",
+            "version>=": "2.8.23"
+        },
+        {
+            "name": "nlohmann-json",
+            "version>=": "3.11.3"
+        },
+        {
+            "name": "stb",
+            "version>=": "2023-04-11"
+        }
+    ],
+    "builtin-baseline": "f7423ee180c4b7f40d43402c2feb3859161ef625"
+}
