@@ -12,14 +12,12 @@ static void hello_world() {
 int main() {
 
 	// stack allocated for now
-	// need to get smarted with heap allocations inside classes
+	// need to get smarter with heap allocations inside classes
 	Renderer renderer;
 	renderer.initialize();
 	
 	ModelLoader modelLoader;
 	modelLoader.loadModel();
-
-
 
 	fmt::println("loop starting");
 

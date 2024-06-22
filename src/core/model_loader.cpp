@@ -30,4 +30,9 @@ void ModelLoader::loadModel() {
 	} else {
 		ret = loader.LoadASCIIFromFile(&model, &err, &warn, myFile.c_str());
 	}
+
+	// next steps
+	// now we have access to the vertex data, need to load into GPU
+	// presumably the tinygltf loader does a size check on the data and either stack or heap allocates correctly
+	// should be freed once loadModel() goes out of scope
 }
