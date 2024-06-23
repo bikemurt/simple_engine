@@ -7,8 +7,8 @@ A simple game engine. This is an educational project. The goals are as follow:
 - Unit testing capabilities (for learning - I don't know much about it myself yet)
 
 Planned functions:
-- 3D renderer
-- Input system (SDL 3.0)
+- 3D renderer - bgfx
+- Input system  - SDL2.0
 - Physics collisions
 - Audio system
 - 2D UI elements
