@@ -15,8 +15,13 @@
             "version>=": "1.127.8725-469"
         },
         {
-            "name": "glfw3",
-            "version>=": "3.4"
+            "name": "sdl2",
+            "version>=": "2.30.3"
+        },
+        {
+            "name": "imgui",
+            "version>=": "1.90.7",
+            "features": ["sdl2-binding"]
         }
     ],
     "builtin-baseline": "f7423ee180c4b7f40d43402c2feb3859161ef625"

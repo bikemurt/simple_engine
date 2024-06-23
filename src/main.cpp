@@ -1,12 +1,10 @@
 #include "fmt/format.h"
 
 #include "core/model_loader.h"
-#include "core/renderer.h"
+#include "core/renderer_sdl2.h"
 
-int main() {
+int main(int argc, char **argv) {
 
-	// stack allocated for now
-	// need to get smarter with heap allocations inside classes
 	Renderer renderer;
 	renderer.setup();
 	
@@ -15,10 +13,13 @@ int main() {
 
 	fmt::println("loop starting");
 
-	while (!glfwWindowShouldClose(renderer.getWindow())) {
+	while (renderer.isActive()) {
 
 		renderer.renderFrame();
 	}
 
+	fmt::println("shutdown");
 	renderer.cleanup();
+
+	return 0;
 }
