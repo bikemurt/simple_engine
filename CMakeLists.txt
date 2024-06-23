@@ -16,7 +16,7 @@ set(PRJ_HEADERS
 set(PRJ_SOURCES
     src/main.cpp
     src/core/model_loader.cpp
-    src/core/renderer_sdl2.cpp
+    src/core/renderer.cpp
     )
 
 add_executable(${PROJECT_NAME} ${PRJ_HEADERS} ${PRJ_SOURCES})

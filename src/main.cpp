@@ -1,7 +1,7 @@
 #include "fmt/format.h"
 
 #include "core/model_loader.h"
-#include "core/renderer_sdl2.h"
+#include "core/renderer.h"
 
 int main(int argc, char **argv) {
 

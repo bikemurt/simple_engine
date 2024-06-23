@@ -1,42 +1,34 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+#include "SDL2/SDL.h"
+#include "SDL2/SDL_syswm.h"
 
-#include "bx/bx.h"
 #include "bgfx/bgfx.h"
 #include "bgfx/platform.h"
-
-#include "GLFW/glfw3.h"
-
-#if BX_PLATFORM_LINUX
-#define GLFW_EXPOSE_NATIVE_X11
-#elif BX_PLATFORM_WINDOWS
-#define GLFW_EXPOSE_NATIVE_WIN32
-#elif BX_PLATFORM_OSX
-#define GLFW_EXPOSE_NATIVE_COCOA
-#endif
-
-#include "GLFW/glfw3native.h"
+#include "bx/bx.h"
 
 class Renderer {
 private:
-    GLFWwindow* p_window;
-    int displayWidth;
-    int displayHeight;
-    int windowWidth;
-    int windowHeight;
 
-    const bgfx::ViewId kClearView = 0;
-    static bool showStats;
+    SDL_Window* p_window;
 
-    static void glfw_keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+    uint32_t width;
+    uint32_t height;
+
+    bool active;
+
+    void handleEvents();
 
 public:
+
+    Renderer();
+
     void setup();
     void renderFrame();
     void cleanup();
 
-    GLFWwindow* getWindow();
+    bool isActive();
 };
 
 #endif
