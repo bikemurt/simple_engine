@@ -16,7 +16,7 @@ Planned functions (links are to `vcpkg`, check dependencies there):
 - Windowing and input system - [SDL2.0](https://vcpkg.io/en/package/sdl2.html) `in process`
 - Physics collisions - [JoltPhysics](https://vcpkg.io/en/package/joltphysics) `not started`
 - Audio system - [OpenALSoft](https://vcpkg.io/en/package/openal-soft) `not started`
-- 2D UI elements - [ImGUI]([https://github.com/ocornut/imgui](https://vcpkg.io/en/package/imgui)) `not started`
+- 2D UI elements - [ImGUI](https://vcpkg.io/en/package/imgui) `not started`
 - Networking -[SDL2-net](https://vcpkg.io/en/package/sdl2-net) `not started`
 
 ## Project principles:
