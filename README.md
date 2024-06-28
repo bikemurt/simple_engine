@@ -10,7 +10,7 @@ Right now it's just authored by me, but I am looking for collaborators - please 
 - Keep code organized, lightweight, minimal
 - An editor that is built from the engine itself
 
-Planned functions (links are to `vcpkg`, check dependencies there):
+## Third party libraries (links are to `vcpkg`, check dependencies there):
 - 3D renderer - [bgfx](https://vcpkg.io/en/package/bgfx) `in process`
 - Model loading - [tinyGLTF](https://vcpkg.io/en/package/tinygltf) `in process`
 - Windowing and input system - [SDL2.0](https://vcpkg.io/en/package/sdl2.html) `in process`
