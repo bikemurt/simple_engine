@@ -23,7 +23,7 @@ Right now it's just authored by me, but I am looking for collaborators - please 
 - A focus on pedagogy. Anyone forking this should be able to build it, learn from it quickly, and work on it if they want 
 - Minimal dependencies in third party libraries. You can check each of the above libraries in `vcpkg`
 
-## Other things that may or may not be important
+## Other things that may or may not be important:
 - Engine wrapper classes are encouraged to make code style consistent, even if they are effectively pass-through functions to third-party libraries
 - Target C++17
 - Only manage memory where needed - allow libraries to do it when they should do it
