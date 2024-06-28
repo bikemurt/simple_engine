@@ -10,18 +10,20 @@ Right now it's just authored by me, but I am looking for collaborators - please 
 - Keep code organized, lightweight, minimal
 - An editor that is built from the engine itself
 
-Planned functions (all libs available in `vcpkg`):
-- 3D renderer - [bgfx](https://github.com/bkaradzic/bgfx) `in process`
-- Input system  - [SDL2.0](https://github.com/libsdl-org/SDL/tree/SDL2) `in process`
-- Physics collisions - [JoltPhysics](https://github.com/jrouwe/JoltPhysics) `not started`
-- Audio system - [OpenALSoft](https://github.com/kcat/openal-soft) `not started`
-- 2D UI elements - [ImGUI](https://github.com/ocornut/imgui) `not started`
-- Networking - Considering [CppServer](https://github.com/chronoxor/CppServer), however this is NOT available on `vcpkg`. Open to suggestions
+Planned functions (links are to `vcpkg`, check dependencies there):
+- 3D renderer - [bgfx]([https://github.com/bkaradzic/bgfx](https://vcpkg.io/en/package/bgfx)) `in process`
+- Model loading - [tinyGLTF](https://vcpkg.io/en/package/tinygltf) `in process`
+- Windowing and input system - [SDL2.0](https://vcpkg.io/en/package/sdl2.html) `in process`
+- Physics collisions - [JoltPhysics](https://vcpkg.io/en/package/joltphysics) `not started`
+- Audio system - [OpenALSoft](https://vcpkg.io/en/package/openal-soft) `not started`
+- 2D UI elements - [ImGUI]([https://github.com/ocornut/imgui](https://vcpkg.io/en/package/imgui)) `not started`
+- Networking -[SDL2-net](https://vcpkg.io/en/package/sdl2-net) `not started`
 
-You'll notice that each of the above libraries have 
+## Project principles:
+- A focus on pedagogy. Anyone forking this should be able to build it, learn from it quickly, and work on it if they want 
+- Minimal dependencies in third party libraries. You can check each of the above libraries in `vcpkg`
 
-## Design principles:
-- Minimal dependencies in third party libraries
+## Other things that may or may not be important
 - Engine wrapper classes are encouraged to make code style consistent, even if they are effectively pass-through functions to third-party libraries
 - Target C++17
 - Only manage memory where needed - allow libraries to do it when they should do it
