@@ -11,7 +11,7 @@ Right now it's just authored by me, but I am looking for collaborators - please 
 - An editor that is built from the engine itself
 
 Planned functions (links are to `vcpkg`, check dependencies there):
-- 3D renderer - [bgfx]([https://github.com/bkaradzic/bgfx](https://vcpkg.io/en/package/bgfx)) `in process`
+- 3D renderer - [bgfx](https://vcpkg.io/en/package/bgfx) `in process`
 - Model loading - [tinyGLTF](https://vcpkg.io/en/package/tinygltf) `in process`
 - Windowing and input system - [SDL2.0](https://vcpkg.io/en/package/sdl2.html) `in process`
 - Physics collisions - [JoltPhysics](https://vcpkg.io/en/package/joltphysics) `not started`
