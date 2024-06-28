@@ -20,11 +20,12 @@ Planned functions (all libs available in `vcpkg`):
 
 You'll notice that each of the above libraries have 
 
-Design principles:
+## Design principles:
 - Minimal dependencies in third party libraries
 - Engine wrapper classes are encouraged to make code style consistent, even if they are effectively pass-through functions to third-party libraries
 - Target C++17
 - Only manage memory where needed - allow libraries to do it when they should do it
 - Avoid singletons (if possible, entirely) for the purposes of unit testing
 
-Timeline: None. This is for fun/learning.
+## Timeline:
+None. This is for fun/learning.
