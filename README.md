@@ -16,7 +16,7 @@ Planned functions (all libs available in `vcpkg`):
 - Physics collisions - [JoltPhysics](https://github.com/jrouwe/JoltPhysics) `not started`
 - Audio system - [OpenALSoft](https://github.com/kcat/openal-soft) `not started`
 - 2D UI elements - [ImGUI](https://github.com/ocornut/imgui) `not started`
-- Networking - Considering [CppServer](https://github.com/chronoxor/CppServer), however this is NOT available on vcpkg. Open to suggestions
+- Networking - Considering [CppServer](https://github.com/chronoxor/CppServer), however this is NOT available on `vcpkg`. Open to suggestions
 
 You'll notice that each of the above libraries have 
 
