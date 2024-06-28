@@ -2,7 +2,7 @@
 
 A Simple Game Engine with a focus on integrating high quality, high visibility, open-source C++ libraries.
 
-Right now it's just authored by me, but I am looking for collaborators - please [reach out](https://x.com/_michaeljared) if you are interseted.
+Right now it's just authored by me, but I am looking for collaborators - please [reach out](https://x.com/_michaeljared) if you are interested.
 
 ## Goals:
 
