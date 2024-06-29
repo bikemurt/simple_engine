@@ -35,7 +35,7 @@ _Note: right now it is NOT cross-platform (I am developing on Windows), but I in
 None. This is for fun/learning.
 
 ## Building from Source:
-Clone the repo. It is expected that `CMake` and `Visual Studio Code` will be used.
+Clone the repo (fork and clone if you want to contribute). It is expected that `CMake` and `Visual Studio Code` will be used.
 
 If you aren't familiar with `vcpkg`, take a look at `vcpkg.json` above. It's fairly intuitive. It contains all dependencies and tools/features required.
 
