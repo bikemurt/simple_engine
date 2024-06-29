@@ -10,6 +10,8 @@ Right now it's just authored by me, but I am looking for collaborators - please 
 - Keep code organized, lightweight, minimal
 - An editor that is built from the engine itself
 
+* Note: right now it is NOT cross-platform, but I intend to develop out the macros and code to facilitate that (eventually).
+
 ## Third party libraries (links are to `vcpkg`, check dependencies there):
 - 3D renderer - [bgfx](https://vcpkg.io/en/package/bgfx) `in process`
 - Model loading - [tinyGLTF](https://vcpkg.io/en/package/tinygltf) `in process`
@@ -33,7 +35,7 @@ Right now it's just authored by me, but I am looking for collaborators - please 
 None. This is for fun/learning.
 
 ## Building from Source:
-Clone the repo. It is expected that `CMake` and `Visual Studio Code` wille b used.
+Clone the repo. It is expected that `CMake` and `Visual Studio Code` will be used.
 
 If you aren't familiar with `vcpkg`, take a look at `vcpkg.json` above. It's fairly intuitive. It contains all dependencies and tools/features required.
 
