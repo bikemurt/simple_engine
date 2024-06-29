@@ -4,6 +4,9 @@ A Simple Game Engine (3D) with a focus on integrating high quality, high visibil
 
 Right now it's just authored by me, but I am looking for collaborators - please [reach out](https://x.com/_michaeljared) if you are interested.
 
+![image](https://github.com/bikemurt/simple_engine/assets/23486102/1d12a829-1043-4484-9a29-d6e47774470e)
+
+
 ## Goals:
 
 - Build a game engine in C++, using lightweight tools such as `vcpkg`, `cmake` and `Visual Studio Code`
