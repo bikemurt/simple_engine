@@ -14,13 +14,13 @@ int main(int argc, char **argv) {
 
 	fmt::println("loop starting");
 
-	while (renderer.getActive()) {
+	while (renderer.m_active) {
 
 		renderer.renderFrame();
 	}
 
 	fmt::println("shutdown");
 	renderer.cleanup();
-	
+
 	return 0;
 }

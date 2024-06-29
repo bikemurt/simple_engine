@@ -188,7 +188,3 @@ void Renderer::cleanup() {
     SDL_Quit();
     
 }
-
-bool Renderer::getActive() {
-    return m_active;
-}

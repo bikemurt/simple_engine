@@ -19,8 +19,6 @@ private:
 
     SDL_Window* p_window;
 
-    bool m_active = true;
-
     struct Context {
         uint32_t width = 800;
         uint32_t height = 600;
@@ -45,14 +43,14 @@ private:
 
 public:
 
+    bool m_active = true;
+
     Renderer();
 
     void setup();
     void renderFrame();
     void cleanup();
 
-    bool getActive();
-    
     struct PosColorVertex
     {
         float m_x;
