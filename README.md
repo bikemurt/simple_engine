@@ -19,7 +19,7 @@ _Note: right now it is NOT cross-platform (I am developing on Windows), but I in
 - Physics collisions - [JoltPhysics](https://vcpkg.io/en/package/joltphysics) `not started`
 - Audio system - [OpenALSoft](https://vcpkg.io/en/package/openal-soft) `not started`
 - 2D UI elements - [ImGUI](https://vcpkg.io/en/package/imgui) `not started`
-- Networking -[SDL2-net](https://vcpkg.io/en/package/sdl2-net) `not started`
+- Networking - [SDL2-net](https://vcpkg.io/en/package/sdl2-net) `not started`
 
 ## Project principles:
 - A focus on pedagogy. Anyone forking this should be able to build it, learn from it quickly, and work on it if they want 
