@@ -31,3 +31,15 @@ Right now it's just authored by me, but I am looking for collaborators - please 
 
 ## Timeline:
 None. This is for fun/learning.
+
+## Building from Source:
+Clone the repo. It is expected that `CMake` and `Visual Studio Code` wille b used.
+
+If you aren't familiar with `vcpkg`, take a look at `vcpkg.json` above. It's fairly intuitive. It contains all dependencies and tools/features required.
+
+In `vscode` I'm using the `CMake Tools` extension, and there's one additional setting needed in order to integrate with `vcpkg`:
+![image](https://github.com/bikemurt/simple_engine/assets/23486102/49cea7ce-8140-4d19-8a9d-ca4b4ff6d033)
+
+It incorporates the `vcpkg.cmake` file into the toolchain:
+
+`-DCMAKE_TOOLCHAIN_FILE=C:\Projects\CppTesting\vc_package_test\vcpkg\scripts\buildsystems\vcpkg.cmake`
