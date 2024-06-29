@@ -12,7 +12,8 @@
         },
         {
             "name": "bgfx",
-            "version>=": "1.127.8725-469"
+            "version>=": "1.127.8725-469",
+            "features": ["tools"]
         },
         {
             "name": "sdl2",

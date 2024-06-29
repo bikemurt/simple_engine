@@ -7,18 +7,27 @@
 #include "bgfx/bgfx.h"
 #include "bgfx/platform.h"
 #include "bx/bx.h"
+#include "bx/allocator.h"
+#include "bx/file.h"
+
+#include "bgfx/bgfx_shader.sh"
 
 class Renderer {
 private:
 
     SDL_Window* p_window;
 
-    uint32_t width;
-    uint32_t height;
+    uint32_t m_width;
+    uint32_t m_height;
 
-    bool active;
+    bool m_active;
 
     void handleEvents();
+
+    bgfx::VertexLayout m_layout;
+    bgfx::VertexBufferHandle m_vbh;
+    bgfx::IndexBufferHandle m_ibh;
+    
 
 public:
 
@@ -28,7 +37,17 @@ public:
     void renderFrame();
     void cleanup();
 
-    bool isActive();
+    bool getActive();
+    
+    struct PosColorVertex
+    {
+        float m_x;
+        float m_y;
+        float m_z;
+        uint32_t m_abgr;
+    };
+
+
 };
 
 #endif
