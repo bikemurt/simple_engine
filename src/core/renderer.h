@@ -12,22 +12,36 @@
 
 #include "bgfx/bgfx_shader.sh"
 
+#include <string>
+
 class Renderer {
 private:
 
     SDL_Window* p_window;
 
-    uint32_t m_width;
-    uint32_t m_height;
+    bool m_active = true;
 
-    bool m_active;
+    struct Context {
+        uint32_t width = 800;
+        uint32_t height = 600;
+
+        // library types in an internal class are OK
+        bgfx::VertexLayout layout;
+        bgfx::VertexBufferHandle vertexBufferHandle;
+        bgfx::IndexBufferHandle indexBufferHandle;
+        bgfx::ProgramHandle programHandle;
+
+        float camPitch = 0.0f;
+        float camYaw = 0.0f;
+        float rotScale = 0.01f;
+
+        int prevMouseX = 0;
+        int prevMouseY = 0;
+
+    } m_context;
 
     void handleEvents();
-
-    bgfx::VertexLayout m_layout;
-    bgfx::VertexBufferHandle m_vbh;
-    bgfx::IndexBufferHandle m_ibh;
-    
+    bgfx::ShaderHandle createShader(const std::string& shader, const char* name);
 
 public:
 
@@ -46,7 +60,6 @@ public:
         float m_z;
         uint32_t m_abgr;
     };
-
 
 };
 

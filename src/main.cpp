@@ -21,6 +21,6 @@ int main(int argc, char **argv) {
 
 	fmt::println("shutdown");
 	renderer.cleanup();
-
+	
 	return 0;
 }
