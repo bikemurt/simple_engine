@@ -10,7 +10,7 @@ Right now it's just authored by me, but I am looking for collaborators - please 
 - Keep code organized, lightweight, minimal
 - An editor that is built from the engine itself
 
-* Note: right now it is NOT cross-platform (I am developing on Windows), but I intend to develop out the macros and code to facilitate that (eventually).
+_Note: right now it is NOT cross-platform (I am developing on Windows), but I intend to develop out the macros and code to facilitate that (eventually)._
 
 ## Third party libraries (links are to `vcpkg`, check dependencies there):
 - 3D renderer - [bgfx](https://vcpkg.io/en/package/bgfx) `in process`
