@@ -2,15 +2,34 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
-#include "tiny_gltf.h"
+#include "fmt/format.h"
+
+#include <string>
 
 #include "model_loader.h"
+#include "utils/fileops.h"
 
-std::string ModelLoader::getFilePathExtension(const std::string &fileName) {
-	if (fileName.find_last_of(".") != std::string::npos) {
-		return fileName.substr(fileName.find_last_of(".") + 1);
+void ModelLoader::loadDataFromAttribute(tinygltf::Model& model, const tinygltf::Primitive& primitive, const char* attribute) {
+
+	std::map<std::string, int>::const_iterator pos = primitive.attributes.find(attribute);
+	if (pos != primitive.attributes.end()) {
+		fmt::println("found attribute {}", attribute);
+		int accessorIndex = pos->second;
+		const tinygltf::Accessor& accessor = model.accessors[accessorIndex];
+
+		fmt::println("accessor type {}", accessor.type);
+		fmt::println("accessor comp type {}", accessor.componentType);
+
+		int bufferViewIndex = accessor.bufferView;
+		const tinygltf::BufferView& bufferView = model.bufferViews[bufferViewIndex];
+
+		fmt::println("buffer {}, byte offset {}, byte length {}", bufferView.buffer, bufferView.byteOffset, bufferView.byteLength);
+		
+		int bufferIndex = bufferView.buffer;
+		const tinygltf::Buffer& buffer = model.buffers[bufferIndex];
+		
+		fmt::println("buffer data size {}", buffer.data.size());
 	}
-	return "";
 }
 
 void ModelLoader::loadModel() {
@@ -20,9 +39,9 @@ void ModelLoader::loadModel() {
 	std::string err;
 	std::string warn;
 
-	std::string myFile = "C:/Projects/CppTesting/test4/assets/gltf/cube.gltf";
+	std::string myFile = "../../assets/gltf/cube.gltf";
 
-	std::string ext = getFilePathExtension(myFile);
+	std::string ext = FileOps::getFilePathExtension(myFile);
 	
 	bool ret = false;
 	if (ext.compare("glb") == 0) {
@@ -31,8 +50,21 @@ void ModelLoader::loadModel() {
 		ret = loader.LoadASCIIFromFile(&model, &err, &warn, myFile.c_str());
 	}
 
-	// next steps
-	// now we have access to the vertex data, need to load into GPU
-	// presumably the tinygltf loader does a size check on the data and either stack or heap allocates correctly
-	// should be freed once loadModel() goes out of scope
+	for (size_t i = 0; i < model.meshes.size(); i++) {
+		const tinygltf::Mesh& mesh = model.meshes[i];
+
+		for (size_t j = 0; j < mesh.primitives.size(); j++) {
+			const tinygltf::Primitive& primitive = mesh.primitives[i];
+
+			// mode = 4 is triangles
+			if (primitive.mode == 4) {
+				
+				loadDataFromAttribute(model, primitive, "POSITION");
+				loadDataFromAttribute(model, primitive, "COLOR_0");
+
+			}
+		}
+
+	}
+
 }

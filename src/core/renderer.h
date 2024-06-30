@@ -18,6 +18,7 @@ class Renderer {
 private:
 
     SDL_Window* p_window;
+    SDL_SysWMinfo wmi;
 
     struct Context {
         uint32_t width = 800;
@@ -38,7 +39,10 @@ private:
 
     } m_context;
 
+    void setupWindow();
     void handleEvents();
+    void cleanupWindow();
+
     bgfx::ShaderHandle createShader(const std::string& shader, const char* name);
 
 public:
@@ -50,6 +54,10 @@ public:
     void setup();
     void renderFrame();
     void cleanup();
+    
+    void setup2();
+    void renderFrame2();
+    void cleanup2();
 
     struct PosColorVertex
     {

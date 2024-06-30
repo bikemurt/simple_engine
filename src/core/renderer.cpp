@@ -47,8 +47,7 @@ bgfx::ShaderHandle Renderer::createShader(const std::string& shader, const char*
     return handle;
 }
 
-void Renderer::setup() {
-
+void Renderer::setupWindow() {
 	SDL_Init(SDL_INIT_VIDEO);
 	
     m_context.width = 800;
@@ -59,9 +58,40 @@ void Renderer::setup() {
         "Simple Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         m_context.width, m_context.height, SDL_WINDOW_SHOWN);
 
-    SDL_SysWMinfo wmi;
     SDL_VERSION(&wmi.version);
     SDL_GetWindowWMInfo(p_window, &wmi);
+}
+
+void Renderer::handleEvents() {
+    SDL_Event event;
+
+    if (SDL_PollEvent(&event) > 0) {
+
+        switch (event.type) {
+            case SDL_KEYDOWN:
+                case SDLK_ESCAPE:
+                    m_active = false;
+                    break;
+
+            case SDL_WINDOWEVENT:
+                switch (event.window.event) {
+                    case SDL_WINDOWEVENT_CLOSE:
+                        m_active = false;
+                        break;
+                }
+        }
+    }
+}
+
+void Renderer::cleanupWindow() {
+    SDL_DestroyWindow(p_window);
+    SDL_Quit();
+}
+
+// --- TESTING
+
+void Renderer::setup2() {
+    setupWindow();
 
     bgfx::renderFrame();
 
@@ -110,28 +140,7 @@ void Renderer::setup() {
 
 }
 
-void Renderer::handleEvents() {
-    SDL_Event event;
-
-    if (SDL_PollEvent(&event) > 0) {
-
-        switch (event.type) {
-            case SDL_KEYDOWN:
-                case SDLK_ESCAPE:
-                    m_active = false;
-                    break;
-
-            case SDL_WINDOWEVENT:
-                switch (event.window.event) {
-                    case SDL_WINDOWEVENT_CLOSE:
-                        m_active = false;
-                        break;
-                }
-        }
-    }
-}
-
-void Renderer::renderFrame() {
+void Renderer::renderFrame2() {
 
     handleEvents();
     
@@ -177,14 +186,25 @@ void Renderer::renderFrame() {
     bgfx::frame();
 }
 
-void Renderer::cleanup() {
+void Renderer::cleanup2() {
     bgfx::destroy(m_context.vertexBufferHandle);
     bgfx::destroy(m_context.indexBufferHandle);
     bgfx::destroy(m_context.programHandle);
 
     bgfx::shutdown();
 
-    SDL_DestroyWindow(p_window);
-    SDL_Quit();
-    
+}
+
+// --- TESTING
+
+void Renderer::setup() {
+    setupWindow();
+}
+
+void Renderer::renderFrame() {
+    handleEvents();
+}
+
+void Renderer::cleanup() {
+    cleanupWindow();
 }

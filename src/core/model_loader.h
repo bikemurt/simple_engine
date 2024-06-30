@@ -3,11 +3,12 @@
 
 #include <string>
 
+#include "tiny_gltf.h"
+
 class ModelLoader {
 
 private:
-    
-    std::string getFilePathExtension(const std::string &fileName);
+    void loadDataFromAttribute(tinygltf::Model& model, const tinygltf::Primitive& primitive, const char* attribute);
 
 public:
 
