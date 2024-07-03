@@ -25,11 +25,9 @@
 				{
 					"attributes":{
 						"COLOR_0":0,
-						"POSITION":1,
-						"NORMAL":2,
-						"TEXCOORD_0":3
+						"POSITION":1
 					},
-					"indices":4
+					"indices":2
 				}
 			]
 		}
@@ -38,14 +36,14 @@
 		{
 			"bufferView":0,
 			"componentType":5123,
-			"count":24,
+			"count":8,
 			"normalized":true,
 			"type":"VEC4"
 		},
 		{
 			"bufferView":1,
 			"componentType":5126,
-			"count":24,
+			"count":8,
 			"max":[
 				1,
 				1,
@@ -60,18 +58,6 @@
 		},
 		{
 			"bufferView":2,
-			"componentType":5126,
-			"count":24,
-			"type":"VEC3"
-		},
-		{
-			"bufferView":3,
-			"componentType":5126,
-			"count":24,
-			"type":"VEC2"
-		},
-		{
-			"bufferView":4,
 			"componentType":5123,
 			"count":36,
 			"type":"SCALAR"
@@ -80,38 +66,26 @@
 	"bufferViews":[
 		{
 			"buffer":0,
-			"byteLength":192,
+			"byteLength":64,
 			"byteOffset":0,
 			"target":34962
 		},
 		{
 			"buffer":0,
-			"byteLength":288,
-			"byteOffset":192,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":288,
-			"byteOffset":480,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":192,
-			"byteOffset":768,
+			"byteLength":96,
+			"byteOffset":64,
 			"target":34962
 		},
 		{
 			"buffer":0,
 			"byteLength":72,
-			"byteOffset":960,
+			"byteOffset":160,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":1032,
+			"byteLength":232,
 			"uri":"cube.bin"
 		}
 	]

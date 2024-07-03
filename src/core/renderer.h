@@ -7,12 +7,12 @@
 #include "bgfx/bgfx.h"
 #include "bgfx/platform.h"
 #include "bx/bx.h"
-#include "bx/allocator.h"
-#include "bx/file.h"
-
-#include "bgfx/bgfx_shader.sh"
+#include "bx/math.h"
 
 #include <string>
+#include <vector>
+
+#include "tiny_gltf.h"
 
 class Renderer {
 private:
@@ -39,9 +39,27 @@ private:
 
     } m_context;
 
+
     void setupWindow();
     void handleEvents();
     void cleanupWindow();
+    
+    
+    std::vector<uint8_t> vData;
+    std::vector<uint16_t> iData;
+
+    void loadModel(const std::string& myFile);
+
+    struct GLTFBufferData {
+        size_t count = 0;
+        int type = -1;
+        int byteStride = 0;
+        int buffer = -1;
+        size_t offset = 0;
+        size_t length = 0;
+    };
+    void findDataFromAttribute(const tinygltf::Model& model, const tinygltf::Primitive& primitive, const char* attribute, GLTFBufferData* bufferData);
+    void get8BitFrom16BitUInt(uint8_t* dest, const void* source);
 
     bgfx::ShaderHandle createShader(const std::string& shader, const char* name);
 
@@ -54,19 +72,6 @@ public:
     void setup();
     void renderFrame();
     void cleanup();
-    
-    void setup2();
-    void renderFrame2();
-    void cleanup2();
-
-    struct PosColorVertex
-    {
-        float m_x;
-        float m_y;
-        float m_z;
-        uint32_t m_abgr;
-    };
-
 };
 
 #endif

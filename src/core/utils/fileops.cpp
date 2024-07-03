@@ -16,7 +16,7 @@ bool FileOps::getFileContentsBinary(const char* filePath, std::string& fileConte
     std::ifstream stream(filePath, std::ios_base::binary);
     
     if (!stream.is_open()) return false;
-
+    
     stream.seekg(0, std::ios::end);
 
     std::streampos endPos = stream.tellg();

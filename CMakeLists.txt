@@ -15,7 +15,6 @@ set(PRJ_HEADERS
 
 set(PRJ_SOURCES
     src/main.cpp
-    src/core/model_loader.cpp
     src/core/renderer.cpp
     src/core/utils/fileops.cpp
     )
