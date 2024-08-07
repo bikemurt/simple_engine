@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
 	
 	fmt::println("loop starting");
 
-	while (renderer.m_active) {
+	while (renderer.active) {
 
 		renderer.renderFrame();
 	}

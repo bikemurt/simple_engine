@@ -28,13 +28,13 @@ bgfx::ShaderHandle Renderer::createShader(const std::string& shader, const char*
 void Renderer::setupWindow() {
 	SDL_Init(SDL_INIT_VIDEO);
 	
-    m_context.width = 800;
-    m_context.height = 600;
+    context.width = 800;
+    context.height = 600;
 
     // TODO: platform specific stuff here
     p_window = SDL_CreateWindow(
         "Simple Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        m_context.width, m_context.height, SDL_WINDOW_SHOWN);
+        context.width, context.height, SDL_WINDOW_SHOWN);
 
     SDL_VERSION(&wmi.version);
     SDL_GetWindowWMInfo(p_window, &wmi);
@@ -48,13 +48,13 @@ void Renderer::handleEvents() {
         switch (event.type) {
             case SDL_KEYDOWN:
                 case SDLK_ESCAPE:
-                    m_active = false;
+                    active = false;
                     break;
 
             case SDL_WINDOWEVENT:
                 switch (event.window.event) {
                     case SDL_WINDOWEVENT_CLOSE:
-                        m_active = false;
+                        active = false;
                         break;
                 }
         }
@@ -79,32 +79,36 @@ void Renderer::setup() {
 
     bgfx::Init init;
     init.type = bgfx::RendererType::Count;
-    init.resolution.width = m_context.width;
-    init.resolution.height = m_context.height;
+    init.resolution.width = context.width;
+    init.resolution.height = context.height;
     init.resolution.reset = BGFX_RESET_VSYNC;
     init.platformData = platformData;
 
     bgfx::init(init);
 
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x443355FF, 1.0f, 0);
-    bgfx::setViewRect(0, 0, 0, m_context.width, m_context.height);
+    bgfx::setViewRect(0, 0, 0, context.width, context.height);
 
     loadModel("../../assets/gltf/cube.gltf");
 
     // configure vertex layout in the GPU for indexed rendering of the triangles
-    m_context.layout.begin()
+    context.layout.begin()
         .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
         .end();
     
-    m_context.vertexBufferHandle = bgfx::createVertexBuffer(
-        bgfx::makeRef(&vData[0], vData.size() * sizeof(uint8_t)),
-        m_context.layout
-        );
+    for (int i = 0; i < renderObjects.size(); i++) {
+        auto r = renderObjects[i];
 
-    m_context.indexBufferHandle = bgfx::createIndexBuffer(
-        bgfx::makeRef(&iData[0], iData.size() * sizeof(uint16_t))
-        );
+        renderObjects[i].vertexBufferHandle = bgfx::createVertexBuffer(
+            bgfx::makeRef(&(renderObjects[i].vertexData[0]), renderObjects[i].vertexData.size() * sizeof(uint8_t)),
+            context.layout
+            );
+        
+        renderObjects[i].indexBufferHandle = bgfx::createIndexBuffer(
+            bgfx::makeRef(&(renderObjects[i].indexData[0]), renderObjects[i].indexData.size() * sizeof(uint16_t))
+            );
+    }
 
     std::string vShaderData;
     assert(FileOps::getFileContentsBinary("../shader/vertex.bin", vShaderData));
@@ -116,7 +120,7 @@ void Renderer::setup() {
     bgfx::ShaderHandle fShader = createShader(fShaderData, "fShader");
     
     // third argument being true destroys shaders
-    m_context.programHandle = bgfx::createProgram(vShader, fShader, true);
+    context.programHandle = bgfx::createProgram(vShader, fShader, true);
 
 }
 
@@ -127,16 +131,16 @@ void Renderer::renderFrame() {
     int mouseX, mouseY;
     const int buttons = SDL_GetMouseState(&mouseX, &mouseY);
     if ((buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) {
-        int delta_x = mouseX - m_context.prevMouseX;
-        int delta_y = mouseY - m_context.prevMouseY;
-        m_context.camYaw += float(-delta_x) * m_context.rotScale;
-        m_context.camPitch += float(-delta_y) * m_context.rotScale;
+        int delta_x = mouseX - context.prevMouseX;
+        int delta_y = mouseY - context.prevMouseY;
+        context.camYaw += float(-delta_x) * context.rotScale;
+        context.camPitch += float(-delta_y) * context.rotScale;
     }
-    m_context.prevMouseX = mouseX;
-    m_context.prevMouseY = mouseY;
+    context.prevMouseX = mouseX;
+    context.prevMouseY = mouseY;
 
     float camRotation[16];
-    bx::mtxRotateXYZ(camRotation, m_context.camPitch, m_context.camYaw, 0.0f);
+    bx::mtxRotateXYZ(camRotation, context.camPitch, context.camYaw, 0.0f);
 
     float camTranslation[16];
     bx::mtxTranslate(camTranslation, 0.0f, 0.0f, -5.0f);
@@ -149,7 +153,7 @@ void Renderer::renderFrame() {
 
     float proj[16];
     bx::mtxProj(
-        proj, 60.0f, float(m_context.width) / float(m_context.height), 0.1f,
+        proj, 60.0f, float(context.width) / float(context.height), 0.1f,
         100.0f, bgfx::getCaps()->homogeneousDepth);
 
     bgfx::setViewTransform(0, view, proj);
@@ -160,31 +164,33 @@ void Renderer::renderFrame() {
     bx::mtxIdentity(model);
     bgfx::setTransform(model);
 
-    bgfx::setVertexBuffer(0, m_context.vertexBufferHandle);
-    bgfx::setIndexBuffer(m_context.indexBufferHandle);
+    for (int i = 0; i < renderObjects.size(); i++) {
+        bgfx::setVertexBuffer(0, renderObjects[i].vertexBufferHandle);
+        bgfx::setIndexBuffer(renderObjects[i].indexBufferHandle);
 
-    uint64_t state = 0
-        | BGFX_STATE_WRITE_R
-        | BGFX_STATE_WRITE_G
-        | BGFX_STATE_WRITE_B
-        | BGFX_STATE_WRITE_A
-        | BGFX_STATE_WRITE_Z
-        | BGFX_STATE_DEPTH_TEST_LESS
-        //| BGFX_STATE_CULL_CW
-        //| BGFX_STATE_MSAA
-        //| UINT64_C(0)
-        ;
-    bgfx::setState(state);
+        uint64_t state = 0
+            | BGFX_STATE_WRITE_R
+            | BGFX_STATE_WRITE_G
+            | BGFX_STATE_WRITE_B
+            | BGFX_STATE_WRITE_A
+            | BGFX_STATE_WRITE_Z
+            | BGFX_STATE_DEPTH_TEST_LESS
+            //| BGFX_STATE_CULL_CW
+            //| BGFX_STATE_MSAA
+            //| UINT64_C(0)
+            ;
+        bgfx::setState(state);
 
-    bgfx::submit(0, m_context.programHandle);
+        bgfx::submit(0, context.programHandle);
+    }
 
     bgfx::frame();
 }
 
 void Renderer::cleanup() {
-    bgfx::destroy(m_context.vertexBufferHandle);
-    bgfx::destroy(m_context.indexBufferHandle);
-    bgfx::destroy(m_context.programHandle);
+    bgfx::destroy(context.vertexBufferHandle);
+    bgfx::destroy(context.indexBufferHandle);
+    bgfx::destroy(context.programHandle);
 
     bgfx::shutdown();
 
@@ -205,7 +211,7 @@ void Renderer::findDataFromAttribute(const tinygltf::Model& model, const tinyglt
         int bufferViewIndex = accessor.bufferView;
         const tinygltf::BufferView& bufferView = model.bufferViews[bufferViewIndex];
         
-        (*bufferData).byteStride = accessor.ByteStride(bufferView);
+        bufferData->byteStride = accessor.ByteStride(bufferView);
 
         bufferData->buffer = bufferView.buffer;
         bufferData->offset = bufferView.byteOffset;
@@ -215,13 +221,17 @@ void Renderer::findDataFromAttribute(const tinygltf::Model& model, const tinyglt
 
 void Renderer::get8BitFrom16BitUInt(uint8_t* dest, const void* source) {
     uint16_t v_16;
+
+    // a little bit obscure, but works
+    // copy 2 bytes from source into v_16
     std::memcpy(&v_16, source, 2);
-    
+
+    // bit shift 8 bits to the right (lose the 8 LSB)
+    // then assign to an 8 byte int (dest)
     *dest = v_16 >> 8;
-    //uint8_t temp_8 = v_16 / 256;
-    //*dest = (uint8_t)(255.0*v_16/65535.0);
 }
 
+// loadModel loads meshes from a gltf file into render objects
 void Renderer::loadModel(const std::string& myFile) {
 
 	tinygltf::Model model;
@@ -238,15 +248,19 @@ void Renderer::loadModel(const std::string& myFile) {
 		ret = loader.LoadASCIIFromFile(&model, &err, &warn, myFile.c_str());
 	}
 
+    // this isn't great for obvious reasons (multiple gltf files loaded?)
+    //renderObjects.resize(model.meshes.size());
+
+    // for each mesh, we want a render object
 	for (size_t i = 0; i < model.meshes.size(); i++) {
 		const tinygltf::Mesh& mesh = model.meshes[i];
 
 		for (size_t j = 0; j < mesh.primitives.size(); j++) {
-			const tinygltf::Primitive& primitive = mesh.primitives[i];
+			const tinygltf::Primitive& primitive = mesh.primitives[j];
 
-			// mode = 4 is triangles
-			if (primitive.mode == 4) {
-				
+			if (primitive.mode == TINYGLTF_MODE_TRIANGLES) {
+                RenderObject o;
+                
                 GLTFBufferData posBufferData;
                 findDataFromAttribute(model, primitive, "POSITION", &posBufferData);
 
@@ -262,18 +276,18 @@ void Renderer::loadModel(const std::string& myFile) {
                 int vertexCount = posBufferData.length / posBufferData.byteStride;
 
                 // division by 2 to go from uint16_t to uint8_t
-                vData.resize(posBufferData.length + clrBufferData.length / 2);
+                o.vertexData.resize(posBufferData.length + clrBufferData.length / 2);
 
                 const tinygltf::Buffer& clrBuffer = model.buffers[clrBufferData.buffer];
                 const tinygltf::Buffer& posBuffer = model.buffers[posBufferData.buffer];
 
                 // position data = 3 floats * 4 bytes per float = 12 bytes
                 // R,G,B,A one byte each = 4 bytes
-                int fullByteStride = posBufferData.byteStride + clrBufferData.byteStride / 2;
+                int vertexByteStride = posBufferData.byteStride + clrBufferData.byteStride / 2;
                 for (int i = 0; i < vertexCount; i++) {
 
-                    // first 3*4 = 12 bytes
-                    std::memcpy(&vData[i * fullByteStride + 0],
+                    // we can memcpy the 12 bytes of position data (3 floats, 4 bytes each)
+                    std::memcpy(&o.vertexData[i * vertexByteStride + 0],
                         &posBuffer.data[posBufferData.offset + i * posBufferData.byteStride], posBufferData.byteStride);
 
                     // each color channel (RGBA) has to be converted from 16 bits to 8 bits
@@ -291,23 +305,22 @@ void Renderer::loadModel(const std::string& myFile) {
                     uint8_t r;
                     get8BitFrom16BitUInt(&r, &clrBuffer.data[clrOffset + 6]);
                     
-                    // next 4*1 = 4 bytes
-                    // structure is abgr
-                    vData[i * fullByteStride + 12] = a;
-                    vData[i * fullByteStride + 13] = b;
-                    vData[i * fullByteStride + 14] = g;
-                    vData[i * fullByteStride + 15] = r;
-
+                    // manually packing in color data. structure is a-b-g-r
+                    o.vertexData[i * vertexByteStride + 12] = a;
+                    o.vertexData[i * vertexByteStride + 13] = b;
+                    o.vertexData[i * vertexByteStride + 14] = g;
+                    o.vertexData[i * vertexByteStride + 15] = r;
                 }
 
-                // indices should(?) be straightforward
+                // index data is packed and can be memcpy'd
                 const tinygltf::Accessor& indicesAccessor = model.accessors[primitive.indices];
                 const tinygltf::BufferView& indicesBufferView = model.bufferViews[indicesAccessor.bufferView];
                 const tinygltf::Buffer& indicesBuffer = model.buffers[indicesBufferView.buffer];
 
-                iData.resize(indicesBufferView.byteLength / 2);
-                std::memcpy(&iData[0], &indicesBuffer.data[indicesBufferView.byteOffset], indicesBufferView.byteLength);
+                o.indexData.resize(indicesBufferView.byteLength / 2);
+                std::memcpy(&o.indexData[0], &indicesBuffer.data[indicesBufferView.byteOffset], indicesBufferView.byteLength);
                 
+                renderObjects.push_back(o);
 			}
 		}
 

@@ -15,11 +15,9 @@
 #include "tiny_gltf.h"
 
 class Renderer {
-private:
+public:
 
-    SDL_Window* p_window;
-    SDL_SysWMinfo wmi;
-
+    // Renderer::Context should also exist in Mesh
     struct Context {
         uint32_t width = 800;
         uint32_t height = 600;
@@ -37,17 +35,29 @@ private:
         int prevMouseX = 0;
         int prevMouseY = 0;
 
-    } m_context;
+    };
+
+private:
+
+    SDL_Window* p_window;
+    SDL_SysWMinfo wmi;
+
+    Context context;
 
 
     void setupWindow();
     void handleEvents();
     void cleanupWindow();
     
-    
-    std::vector<uint8_t> vData;
-    std::vector<uint16_t> iData;
+    struct RenderObject {
+        std::vector<uint8_t> vertexData;
+        std::vector<uint16_t> indexData;
+        bgfx::VertexBufferHandle vertexBufferHandle;
+        bgfx::IndexBufferHandle indexBufferHandle;
+    };
 
+    std::vector<RenderObject> renderObjects;
+    
     void loadModel(const std::string& myFile);
 
     struct GLTFBufferData {
@@ -65,7 +75,7 @@ private:
 
 public:
 
-    bool m_active = true;
+    bool active = true;
 
     Renderer();
 
