@@ -231,25 +231,129 @@ void Renderer::get8BitFrom16BitUInt(uint8_t* dest, const void* source) {
     *dest = v_16 >> 8;
 }
 
+// save render object
+void Renderer::saveRenderObject(const RenderObject& renderObject) {
+
+    std::string basePath = meshImportSavePath + renderObject.specifier;
+
+    std::ofstream outputFile(basePath + "-v.bin", std::ios::binary);
+    outputFile.write(reinterpret_cast<const char*>(renderObject.vertexData.data()), renderObject.vertexData.size());
+    outputFile.close();
+    
+    std::ofstream outputFile2(basePath + "-i.bin", std::ios::binary);
+    outputFile2.write(reinterpret_cast<const char*>(renderObject.indexData.data()), renderObject.indexData.size());
+    outputFile2.close();
+    
+}
+
+void Renderer::loadRenderObject(const std::string& specifier, RenderObject* renderObject) {
+    std::string basePath = meshImportSavePath + specifier;
+
+    std::string filepath = basePath + "-v.bin";
+    std::ifstream inputFile(filepath, std::ios::binary | std::ios::ate);
+
+    std::streamsize size = inputFile.tellg();
+    inputFile.seekg(0, std::ios::beg);
+    
+    renderObject->vertexData.resize(size);
+    
+    if (!inputFile.read(reinterpret_cast<char*>(renderObject->vertexData.data()), size)) {
+        fmt::println("Error reading file: " + filepath);
+    }
+    inputFile.close();
+    
+    std::string filepath2 = basePath + "-i.bin";
+    std::ifstream inputFile2(filepath2, std::ios::binary | std::ios::ate);
+
+    std::streamsize size2 = inputFile2.tellg();
+    inputFile2.seekg(0, std::ios::beg);
+    
+    renderObject->indexData.resize(size2);
+    
+    if (!inputFile2.read(reinterpret_cast<char*>(renderObject->indexData.data()), size2)) {
+        fmt::println("Error reading file: " + filepath2);
+    }
+    inputFile2.close();
+}
+
+void Renderer::processPrimitive(const tinygltf::Model& model, const tinygltf::Primitive& primitive, RenderObject* renderObject) {
+    GLTFBufferData posBufferData;
+    findDataFromAttribute(model, primitive, "POSITION", &posBufferData);
+
+    GLTFBufferData clrBufferData;
+    findDataFromAttribute(model, primitive, "COLOR_0", &clrBufferData);
+
+    assert(posBufferData.buffer != -1);
+    assert(posBufferData.type == TINYGLTF_TYPE_VEC3);
+
+    assert(clrBufferData.buffer != -1);
+    assert(clrBufferData.type == TINYGLTF_TYPE_VEC4);
+
+    int vertexCount = posBufferData.length / posBufferData.byteStride;
+
+    // division by 2 to go from uint16_t to uint8_t
+    renderObject->vertexData.resize(posBufferData.length + clrBufferData.length / 2);
+
+    const tinygltf::Buffer& clrBuffer = model.buffers[clrBufferData.buffer];
+    const tinygltf::Buffer& posBuffer = model.buffers[posBufferData.buffer];
+
+    // position data = 3 floats * 4 bytes per float = 12 bytes
+    // R,G,B,A one byte each = 4 bytes
+    int vertexByteStride = posBufferData.byteStride + clrBufferData.byteStride / 2;
+    for (int i = 0; i < vertexCount; i++) {
+
+        // we can memcpy the 12 bytes of position data (3 floats, 4 bytes each)
+        std::memcpy(&renderObject->vertexData[i * vertexByteStride + 0],
+            &posBuffer.data[posBufferData.offset + i * posBufferData.byteStride], posBufferData.byteStride);
+
+        // each color channel (RGBA) has to be converted from 16 bits to 8 bits
+        int clrOffset = clrBufferData.offset + i * clrBufferData.byteStride;
+
+        uint8_t a;
+        get8BitFrom16BitUInt(&a, &clrBuffer.data[clrOffset + 0]);
+        
+        uint8_t b;
+        get8BitFrom16BitUInt(&b, &clrBuffer.data[clrOffset + 2]);
+        
+        uint8_t g;
+        get8BitFrom16BitUInt(&g, &clrBuffer.data[clrOffset + 4]);
+        
+        uint8_t r;
+        get8BitFrom16BitUInt(&r, &clrBuffer.data[clrOffset + 6]);
+        
+        // manually packing in color data. structure is a-b-g-r
+        renderObject->vertexData[i * vertexByteStride + 12] = a;
+        renderObject->vertexData[i * vertexByteStride + 13] = b;
+        renderObject->vertexData[i * vertexByteStride + 14] = g;
+        renderObject->vertexData[i * vertexByteStride + 15] = r;
+    }
+
+    // index data is packed and can be memcpy'd
+    const tinygltf::Accessor& indicesAccessor = model.accessors[primitive.indices];
+    const tinygltf::BufferView& indicesBufferView = model.bufferViews[indicesAccessor.bufferView];
+    const tinygltf::Buffer& indicesBuffer = model.buffers[indicesBufferView.buffer];
+
+    renderObject->indexData.resize(indicesBufferView.byteLength / 2);
+    std::memcpy(&renderObject->indexData[0], &indicesBuffer.data[indicesBufferView.byteOffset], indicesBufferView.byteLength);
+    
+}
+
 // loadModel loads meshes from a gltf file into render objects
-void Renderer::loadModel(const std::string& myFile) {
+void Renderer::loadModel(const std::string& fileName) {
 
 	tinygltf::Model model;
 	tinygltf::TinyGLTF loader;
 	std::string err;
 	std::string warn;
 
-	std::string ext = FileOps::getFilePathExtension(myFile);
+	std::string ext = FileOps::getFilePathExtension(fileName);
 	
 	bool ret = false;
 	if (ext.compare("glb") == 0) {
-		ret = loader.LoadBinaryFromFile(&model, &err, &warn, myFile.c_str());
+		ret = loader.LoadBinaryFromFile(&model, &err, &warn, fileName.c_str());
 	} else {
-		ret = loader.LoadASCIIFromFile(&model, &err, &warn, myFile.c_str());
+		ret = loader.LoadASCIIFromFile(&model, &err, &warn, fileName.c_str());
 	}
-
-    // this isn't great for obvious reasons (multiple gltf files loaded?)
-    //renderObjects.resize(model.meshes.size());
 
     // for each mesh, we want a render object
 	for (size_t i = 0; i < model.meshes.size(); i++) {
@@ -259,68 +363,20 @@ void Renderer::loadModel(const std::string& myFile) {
 			const tinygltf::Primitive& primitive = mesh.primitives[j];
 
 			if (primitive.mode == TINYGLTF_MODE_TRIANGLES) {
-                RenderObject o;
-                
-                GLTFBufferData posBufferData;
-                findDataFromAttribute(model, primitive, "POSITION", &posBufferData);
+                RenderObject renderObject;
+                // this is dumb, but a hack for now
+                renderObject.specifier = std::filesystem::path(fileName).stem().string() + "-" + mesh.name + "-" + std::to_string(j);
 
-                GLTFBufferData clrBufferData;
-                findDataFromAttribute(model, primitive, "COLOR_0", &clrBufferData);
-
-                assert(posBufferData.buffer != -1);
-                assert(posBufferData.type == TINYGLTF_TYPE_VEC3);
-
-                assert(clrBufferData.buffer != -1);
-                assert(clrBufferData.type == TINYGLTF_TYPE_VEC4);
-
-                int vertexCount = posBufferData.length / posBufferData.byteStride;
-
-                // division by 2 to go from uint16_t to uint8_t
-                o.vertexData.resize(posBufferData.length + clrBufferData.length / 2);
-
-                const tinygltf::Buffer& clrBuffer = model.buffers[clrBufferData.buffer];
-                const tinygltf::Buffer& posBuffer = model.buffers[posBufferData.buffer];
-
-                // position data = 3 floats * 4 bytes per float = 12 bytes
-                // R,G,B,A one byte each = 4 bytes
-                int vertexByteStride = posBufferData.byteStride + clrBufferData.byteStride / 2;
-                for (int i = 0; i < vertexCount; i++) {
-
-                    // we can memcpy the 12 bytes of position data (3 floats, 4 bytes each)
-                    std::memcpy(&o.vertexData[i * vertexByteStride + 0],
-                        &posBuffer.data[posBufferData.offset + i * posBufferData.byteStride], posBufferData.byteStride);
-
-                    // each color channel (RGBA) has to be converted from 16 bits to 8 bits
-                    int clrOffset = clrBufferData.offset + i * clrBufferData.byteStride;
-
-                    uint8_t a;
-                    get8BitFrom16BitUInt(&a, &clrBuffer.data[clrOffset + 0]);
-                    
-                    uint8_t b;
-                    get8BitFrom16BitUInt(&b, &clrBuffer.data[clrOffset + 2]);
-                    
-                    uint8_t g;
-                    get8BitFrom16BitUInt(&g, &clrBuffer.data[clrOffset + 4]);
-                    
-                    uint8_t r;
-                    get8BitFrom16BitUInt(&r, &clrBuffer.data[clrOffset + 6]);
-                    
-                    // manually packing in color data. structure is a-b-g-r
-                    o.vertexData[i * vertexByteStride + 12] = a;
-                    o.vertexData[i * vertexByteStride + 13] = b;
-                    o.vertexData[i * vertexByteStride + 14] = g;
-                    o.vertexData[i * vertexByteStride + 15] = r;
+                if (std::filesystem::exists(meshImportSavePath + renderObject.specifier + "-v.bin") &&
+                    std::filesystem::exists(meshImportSavePath + renderObject.specifier + "-i.bin")) {
+                    loadRenderObject(renderObject.specifier, &renderObject);
+                } else {
+                    processPrimitive(model, primitive, &renderObject);
+                    saveRenderObject(renderObject);
                 }
 
-                // index data is packed and can be memcpy'd
-                const tinygltf::Accessor& indicesAccessor = model.accessors[primitive.indices];
-                const tinygltf::BufferView& indicesBufferView = model.bufferViews[indicesAccessor.bufferView];
-                const tinygltf::Buffer& indicesBuffer = model.buffers[indicesBufferView.buffer];
-
-                o.indexData.resize(indicesBufferView.byteLength / 2);
-                std::memcpy(&o.indexData[0], &indicesBuffer.data[indicesBufferView.byteOffset], indicesBufferView.byteLength);
-                
-                renderObjects.push_back(o);
+                // queue it for actual rendering
+                renderObjects.push_back(renderObject);
 			}
 		}
 

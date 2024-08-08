@@ -3,19 +3,12 @@
 		"generator":"Khronos glTF Blender I/O v3.6.27",
 		"version":"2.0"
 	},
-	"extensionsUsed":[
-		"OMI_physics_shape"
-	],
-	"extensions":{
-		"OMI_physics_shape":{}
-	},
 	"scene":0,
 	"scenes":[
 		{
 			"name":"Scene",
 			"nodes":[
-				0,
-				1
+				0
 			]
 		}
 	],
@@ -23,15 +16,6 @@
 		{
 			"mesh":0,
 			"name":"Cube"
-		},
-		{
-			"mesh":1,
-			"name":"Cube.001",
-			"translation":[
-				4.046984672546387,
-				0,
-				0
-			]
 		}
 	],
 	"meshes":[
@@ -46,20 +30,6 @@
 						"TEXCOORD_0":3
 					},
 					"indices":4
-				}
-			]
-		},
-		{
-			"name":"Cube.001",
-			"primitives":[
-				{
-					"attributes":{
-						"COLOR_0":5,
-						"POSITION":6,
-						"NORMAL":7,
-						"TEXCOORD_0":8
-					},
-					"indices":9
 				}
 			]
 		}
@@ -105,47 +75,6 @@
 			"componentType":5123,
 			"count":36,
 			"type":"SCALAR"
-		},
-		{
-			"bufferView":5,
-			"componentType":5123,
-			"count":24,
-			"normalized":true,
-			"type":"VEC4"
-		},
-		{
-			"bufferView":6,
-			"componentType":5126,
-			"count":24,
-			"max":[
-				1.3955864906311035,
-				1.5546009540557861,
-				1.7063144445419312
-			],
-			"min":[
-				-1.3955861330032349,
-				-1.5546009540557861,
-				-1.7063151597976685
-			],
-			"type":"VEC3"
-		},
-		{
-			"bufferView":7,
-			"componentType":5126,
-			"count":24,
-			"type":"VEC3"
-		},
-		{
-			"bufferView":8,
-			"componentType":5126,
-			"count":24,
-			"type":"VEC2"
-		},
-		{
-			"bufferView":9,
-			"componentType":5123,
-			"count":36,
-			"type":"SCALAR"
 		}
 	],
 	"bufferViews":[
@@ -178,41 +107,11 @@
 			"byteLength":72,
 			"byteOffset":960,
 			"target":34963
-		},
-		{
-			"buffer":0,
-			"byteLength":192,
-			"byteOffset":1032,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":288,
-			"byteOffset":1224,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":288,
-			"byteOffset":1512,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":192,
-			"byteOffset":1800,
-			"target":34962
-		},
-		{
-			"buffer":0,
-			"byteLength":72,
-			"byteOffset":1992,
-			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":2064,
+			"byteLength":1032,
 			"uri":"cube.bin"
 		}
 	]

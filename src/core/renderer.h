@@ -11,6 +11,8 @@
 
 #include <string>
 #include <vector>
+#include <fstream>
+#include <filesystem>
 
 #include "tiny_gltf.h"
 
@@ -49,7 +51,11 @@ private:
     void handleEvents();
     void cleanupWindow();
     
+    std::string meshImportSavePath = "C:\\Projects\\CppTesting\\simple_engine\\imports\\meshes\\";
     struct RenderObject {
+        // shouldn't carry this stuff around, but oh well
+        std::string specifier = "";
+
         std::vector<uint8_t> vertexData;
         std::vector<uint16_t> indexData;
         bgfx::VertexBufferHandle vertexBufferHandle;
@@ -58,6 +64,9 @@ private:
 
     std::vector<RenderObject> renderObjects;
     
+    void saveRenderObject(const RenderObject& renderObject);
+    void loadRenderObject(const std::string& specifier, RenderObject* renderObject);
+    void processPrimitive(const tinygltf::Model &model, const tinygltf::Primitive &primitive, RenderObject *renderObject);
     void loadModel(const std::string& myFile);
 
     struct GLTFBufferData {
