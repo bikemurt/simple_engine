@@ -2,7 +2,7 @@
 
 A Simple Game Engine (3D) with a focus on integrating high quality, high visibility, open-source C++ libraries.
 
-Right now it's just authored by me, but I am looking for collaborators - please [reach out](https://x.com/_michaeljared) if you are interested.
+Right now it's just authored by me, but I am looking for collaborators - please [join the discord]([https://discord.gg/QCrfQwMe) if you are interested.
 
 ![image](https://github.com/bikemurt/simple_engine/assets/23486102/1d12a829-1043-4484-9a29-d6e47774470e)
 
