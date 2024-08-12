@@ -14,10 +14,11 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "tiny_gltf.h"
 
-GltfLoader::GltfLoader() {
+GltfLoader::GltfLoader(std::string fileName, const VertexLayout& vertexLayout) :
+    fileName(fileName), vertexLayout(vertexLayout) {
 }
 
-void GltfLoader::loadMeshes(const std::string& fileName, std::vector<Mesh>& meshes) {
+void GltfLoader::loadMeshes(std::vector<Mesh>& meshes) {
 
 	tinygltf::Model model;
 	tinygltf::TinyGLTF loader;
@@ -98,23 +99,31 @@ void GltfLoader::processPrimitive(const tinygltf::Model& model, const tinygltf::
     
     // assert that the vertex layout is correct and add all buffers
     std::vector<GLTFBufferData> accessorBuffers;
-    int vertexByteLength = 0;
-    for (int i = 0; i < ATTRIBUTES.size(); i++) {
+
+    // validate vertex layout and populate accessor buffers (for later interleaving data)
+    int vertexCount = -1;
+    for (const VertexLayoutItem& item : vertexLayout.items) {
         GLTFBufferData bufferData;
-        findDataFromAttribute(model, primitive, ATTRIBUTES[i].c_str(), &bufferData);
+        findDataFromAttribute(model, primitive, item.attribute.c_str(), &bufferData);
         assert(bufferData.buffer != -1);
-        assert(bufferData.type == ATTRIBUTE_TYPES[i]);
-        assert(bufferData.componentType == ATTRIBUTE_COMP_TYPES[i]);
+        assert(bufferData.type == item.type);
+
+        if (item.bgfxAttrib != bgfx::Attrib::Color0) {
+            // GLTF matches component types on everything except color...
+            assert(bufferData.componentType == item.componentType);
+        } else {
+            // color data from blender is a 16-bit unsigned int (VEC4)
+            assert(bufferData.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT);
+        }
         
+        if (item.bgfxAttrib == bgfx::Attrib::Position) {
+            vertexCount = bufferData.count;
+        }
+
         accessorBuffers.push_back(std::move(bufferData));
     }
 
-
-    // get vertex count from the POSITION accessor
-    const GLTFBufferData& posBufferDataX = accessorBuffers[1];
-    int vertexCount = posBufferDataX.count;
-
-    mesh->vertexData.resize(VERTEX_BYTE_STRIDE * vertexCount);
+    mesh->vertexData.resize(vertexLayout.byteStride * vertexCount);
     for (int i = 0; i < vertexCount; i++) {
 
         // let's call this the "PACKED" vertex data structure
@@ -125,17 +134,19 @@ void GltfLoader::processPrimitive(const tinygltf::Model& model, const tinygltf::
         // TEX(4) TEX(4)
         // TNG(4) TNG(4) TNG(4) TNG(4)
 
-        // this is the offset WITHIN the interleaved data
         int packedOffsetCounter = 0;
-
-        for (int j = 0; j < ATTRIBUTES.size(); j++) {
+        for (int j = 0; j < vertexLayout.items.size(); j++) {
+            // maybe it is silly that we are pulling from these two different sources?
+            // maybe not. they are just refs. they are free
+            const VertexLayoutItem& item = vertexLayout.items[j];
             const GLTFBufferData& bufferData = accessorBuffers[j];
+
             const tinygltf::Buffer& buffer = model.buffers[bufferData.buffer];
 
             int gltfDataOffset = bufferData.offset + i * bufferData.byteStride;
-            int packedDataOffset = packedOffsetCounter + i * VERTEX_BYTE_STRIDE;
+            int packedDataOffset = packedOffsetCounter + i * vertexLayout.byteStride;
             
-            if (ATTRIBUTES[j] == "COLOR_0") {
+            if (item.bgfxAttrib == bgfx::Attrib::Color0) {
                 // structure is a-b-g-r
                 for (int k = 0; k < 4; k++) {
                     uint8_t x;
@@ -158,60 +169,8 @@ void GltfLoader::processPrimitive(const tinygltf::Model& model, const tinygltf::
     const tinygltf::BufferView& indicesBufferView = model.bufferViews[indicesAccessor.bufferView];
     const tinygltf::Buffer& indicesBuffer = model.buffers[indicesBufferView.buffer];
 
-    // byte length
+    // validate indices are 16 bit integers
+    assert(indicesAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT);
     mesh->indexData.resize(indicesBufferView.byteLength / 2);
     std::memcpy(&mesh->indexData[0], &indicesBuffer.data[indicesBufferView.byteOffset], indicesBufferView.byteLength);
-}
-
-void GltfLoader::vertexLayoutItemHelper(VertexLayoutItem& item, const std::string& attribute) {
-
-    int type = TINYGLTF_TYPE_VEC3;
-    int componentType = TINYGLTF_COMPONENT_TYPE_FLOAT;
-
-    if (attribute == "COLOR_0") {
-        type = TINYGLTF_TYPE_VEC4;
-        componentType = TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT;
-    } else if (attribute == "TANGENT") {
-        type = TINYGLTF_TYPE_VEC4;
-    } else if (attribute == "TEXCOORD_0") {
-        type = TINYGLTF_TYPE_VEC2;
-    }
-
-    item.attribute = attribute;
-    item.bgfxAttrib = getBGFXAttribute(attribute);
-    item.type = type;
-    item.componentType = componentType;
-    item.bgfxAttribType = getBGFXAttribType(componentType);
-
-    int bytes = 0;
-
-    // https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html#accessor-data-types
-    if (componentType == 5120 || componentType == 5121) bytes = 1;
-    else if (componentType == 5122 || componentType == 5123) bytes = 2;
-    else if (componentType == 5125 || componentType == 5126) bytes = 4;
-
-    item.byteStride = type * bytes;    
-}
-
-bgfx::Attrib::Enum GltfLoader::getBGFXAttribute(const std::string& attribute) {
-    if (attribute == "POSITION") return bgfx::Attrib::Position;
-    else if (attribute == "NORMAL") return bgfx::Attrib::Normal;
-    else if (attribute == "TANGENT") return bgfx::Attrib::Tangent;
-    else if (attribute == "TEXCOORD_0") return bgfx::Attrib::TexCoord0;
-    else if (attribute == "COLOR_0") return bgfx::Attrib::Color0;
-    return bgfx::Attrib::Position;
-}
-
-bgfx::AttribType::Enum GltfLoader::getBGFXAttribType(int componentType) {
-    if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT) return bgfx::AttribType::Uint8;
-    else if (componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) return bgfx::AttribType::Float;
-}
-
-void GltfLoader::vertexLayoutHelper(VertexLayout& layout, const std::vector<std::string>& attributes) {
-    for (int i = 0; i < attributes.size(); i++) {
-        VertexLayoutItem item;
-        vertexLayoutItemHelper(item, attributes[i]);
-        layout.byteStride += item.byteStride;
-        layout.items.push_back(std::move(item));
-    }
 }

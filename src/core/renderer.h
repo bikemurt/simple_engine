@@ -20,8 +20,6 @@
 #include "mesh.h"
 
 class Renderer {
-public:
-
 
 private:
 
@@ -47,6 +45,8 @@ private:
 
     std::vector<Mesh> meshes;
     std::vector<RenderObject> renderObjects;
+
+    void setContextVertexLayout(const VertexLayout& vertexLayout);
 
     void setupWindow();
     void handleEvents();

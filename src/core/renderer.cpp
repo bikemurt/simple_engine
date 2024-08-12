@@ -82,37 +82,28 @@ void Renderer::setup() {
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x443355FF, 1.0f, 0);
     bgfx::setViewRect(0, 0, 0, context.width, context.height);
 
-    // PIPELINE TESTING
-    GltfLoader g;
-    g.loadMeshes("../../assets/gltf/cube_2.gltf", meshes);
-
     VertexLayout vertexLayout;
+
+    // the big question is WHERE is this layout dictated from?
+    // needs alignment between the shader and the geometry
     std::vector<std::string> attributes = { "POSITION", "COLOR_0", "NORMAL", "TEXCOORD_0", "TANGENT" };
-    GltfLoader::vertexLayoutHelper(vertexLayout, attributes);
+    RenderObject::vertexLayoutHelper(vertexLayout, attributes);
 
-    context.layout.begin();
-    for (int i = 0; i < vertexLayout.items.size(); i++) {
-        VertexLayoutItem& item = vertexLayout.items[i];
-        bool normalized = false;
-        if (item.attribute == "COLOR_0") normalized = true;
-        context.layout.add(item.bgfxAttrib, item.type, item.bgfxAttribType, normalized);
-    }
-    context.layout.end();
+    // PIPELINE TESTING
+    GltfLoader g("../../assets/gltf/cube_2.gltf", vertexLayout);
+    g.loadMeshes(meshes);
 
-/*
-    context.layout.begin()
-        .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
-        .add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
-        .add(bgfx::Attrib::Tangent, 4, bgfx::AttribType::Float)
-        .end();*/
+    setContextVertexLayout(vertexLayout);
+
+    // SOLUTION
+    // vertex layout gets assigned to the RenderObject
+    // a reference is probably fine?
 
     // do some magic for now, creating a whole bunch of renderObjects with that mesh
     for (int i = 0; i < meshes.size(); i++) {
         // hopefully not doing anything dumb here
         // this should keep the "mesh" ownership in the meshes vector
-        renderObjects.push_back(RenderObject(meshes[i]));
+        renderObjects.push_back(RenderObject(meshes[i], vertexLayout));
     }
 
     // FROM HERE FORWARD SHOULD NOT CHANGE TOO MUCH
@@ -128,10 +119,10 @@ void Renderer::setup() {
     }
 
     std::string vShaderData;
-    assert(FileOps::getFileContentsBinary("../shader/vertex.bin", vShaderData));
+    assert(FileOps::getFileContentsBinary("../shader/b-vertex.bin", vShaderData));
     
     std::string fShaderData;
-    assert(FileOps::getFileContentsBinary("../shader/fragment.bin", fShaderData));
+    assert(FileOps::getFileContentsBinary("../shader/b-fragment.bin", fShaderData));
     
     bgfx::ShaderHandle vShader = createShader(vShaderData, "vShader");
     bgfx::ShaderHandle fShader = createShader(fShaderData, "fShader");
@@ -139,6 +130,17 @@ void Renderer::setup() {
     // third argument being true destroys shaders
     context.programHandle = bgfx::createProgram(vShader, fShader, true);
 
+}
+
+void Renderer::setContextVertexLayout(const VertexLayout& vertexLayout) {
+    context.layout.begin();
+    for (int i = 0; i < vertexLayout.items.size(); i++) {
+        const VertexLayoutItem& item = vertexLayout.items[i];
+        bool normalized = false;
+        if (item.attribute == "COLOR_0") normalized = true;
+        context.layout.add(item.bgfxAttrib, item.type, item.bgfxAttribType, normalized);
+    }
+    context.layout.end();
 }
 
 void Renderer::renderFrame() {
