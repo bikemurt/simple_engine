@@ -2,8 +2,8 @@
 
 REM compile shaders
 
-set vertexName=vertex
-set fragmentName=fragment
+set vertexName=b-vertex
+set fragmentName=b-fragment
 
 set shaderDir=..\..\build\shader
 set toolDir=..\..\build\vcpkg_installed\x64-windows\tools\bgfx

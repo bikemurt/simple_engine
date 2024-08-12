@@ -1,19 +1,14 @@
 // core includes
-
 #define ENABLE_DEBUG
-#include "utils/debug.h"
+#include "../utils/debug.h"
 
 #include "renderer.h"
-#include "utils/fileops.h"
+#include "../utils/fileops.h"
+
+#include "../importers/gltf_loader.h"
 
 // module includes
 #include "fmt/format.h"
-#include <string>
-
-#define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "tiny_gltf.h"
 
 Renderer::Renderer() {
 }
@@ -66,8 +61,6 @@ void Renderer::cleanupWindow() {
     SDL_Quit();
 }
 
-// --- TESTING
-
 void Renderer::setup() {
     setupWindow();
 
@@ -89,24 +82,48 @@ void Renderer::setup() {
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x443355FF, 1.0f, 0);
     bgfx::setViewRect(0, 0, 0, context.width, context.height);
 
-    loadModel("../../assets/gltf/cube.gltf");
+    // PIPELINE TESTING
+    GltfLoader g;
+    g.loadMeshes("../../assets/gltf/cube_2.gltf", meshes);
 
-    // configure vertex layout in the GPU for indexed rendering of the triangles
+    VertexLayout vertexLayout;
+    std::vector<std::string> attributes = { "POSITION", "COLOR_0", "NORMAL", "TEXCOORD_0", "TANGENT" };
+    GltfLoader::vertexLayoutHelper(vertexLayout, attributes);
+
+    context.layout.begin();
+    for (int i = 0; i < vertexLayout.items.size(); i++) {
+        VertexLayoutItem& item = vertexLayout.items[i];
+        bool normalized = false;
+        if (item.attribute == "COLOR_0") normalized = true;
+        context.layout.add(item.bgfxAttrib, item.type, item.bgfxAttribType, normalized);
+    }
+    context.layout.end();
+
+/*
     context.layout.begin()
         .add(bgfx::Attrib::Position, 3, bgfx::AttribType::Float)
         .add(bgfx::Attrib::Color0, 4, bgfx::AttribType::Uint8, true)
-        .end();
-    
-    for (int i = 0; i < renderObjects.size(); i++) {
-        auto r = renderObjects[i];
+        .add(bgfx::Attrib::Normal, 3, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::TexCoord0, 2, bgfx::AttribType::Float)
+        .add(bgfx::Attrib::Tangent, 4, bgfx::AttribType::Float)
+        .end();*/
 
+    // do some magic for now, creating a whole bunch of renderObjects with that mesh
+    for (int i = 0; i < meshes.size(); i++) {
+        // hopefully not doing anything dumb here
+        // this should keep the "mesh" ownership in the meshes vector
+        renderObjects.push_back(RenderObject(meshes[i]));
+    }
+
+    // FROM HERE FORWARD SHOULD NOT CHANGE TOO MUCH
+    for (int i = 0; i < renderObjects.size(); i++) {
         renderObjects[i].vertexBufferHandle = bgfx::createVertexBuffer(
-            bgfx::makeRef(&(renderObjects[i].vertexData[0]), renderObjects[i].vertexData.size() * sizeof(uint8_t)),
+            bgfx::makeRef(&renderObjects[i].mesh.vertexData[0], renderObjects[i].mesh.vertexData.size() * sizeof(uint8_t)),
             context.layout
             );
         
         renderObjects[i].indexBufferHandle = bgfx::createIndexBuffer(
-            bgfx::makeRef(&(renderObjects[i].indexData[0]), renderObjects[i].indexData.size() * sizeof(uint16_t))
+            bgfx::makeRef(&renderObjects[i].mesh.indexData[0], renderObjects[i].mesh.indexData.size() * sizeof(uint16_t))
             );
     }
 
@@ -188,197 +205,13 @@ void Renderer::renderFrame() {
 }
 
 void Renderer::cleanup() {
-    bgfx::destroy(context.vertexBufferHandle);
-    bgfx::destroy(context.indexBufferHandle);
+    for (int i = 0; i < renderObjects.size(); i++) {
+        bgfx::destroy(renderObjects[i].vertexBufferHandle);
+        bgfx::destroy(renderObjects[i].indexBufferHandle);
+    }
+
     bgfx::destroy(context.programHandle);
 
     bgfx::shutdown();
 
-}
-
-// --- MODEL LOADING
-
-void Renderer::findDataFromAttribute(const tinygltf::Model& model, const tinygltf::Primitive& primitive, const char* attribute, GLTFBufferData* bufferData) {
-    std::map<std::string, int>::const_iterator pos = primitive.attributes.find(attribute);
-    if (pos != primitive.attributes.end()) {
-        
-        int accessorIndex = pos->second;
-        const tinygltf::Accessor& accessor = model.accessors[accessorIndex];
-        
-        bufferData->count = accessor.count;
-        bufferData->type = accessor.type;
-
-        int bufferViewIndex = accessor.bufferView;
-        const tinygltf::BufferView& bufferView = model.bufferViews[bufferViewIndex];
-        
-        bufferData->byteStride = accessor.ByteStride(bufferView);
-
-        bufferData->buffer = bufferView.buffer;
-        bufferData->offset = bufferView.byteOffset;
-        bufferData->length = bufferView.byteLength;
-    }
-}
-
-void Renderer::get8BitFrom16BitUInt(uint8_t* dest, const void* source) {
-    uint16_t v_16;
-
-    // a little bit obscure, but works
-    // copy 2 bytes from source into v_16
-    std::memcpy(&v_16, source, 2);
-
-    // bit shift 8 bits to the right (lose the 8 LSB)
-    // then assign to an 8 byte int (dest)
-    *dest = v_16 >> 8;
-}
-
-// save render object
-void Renderer::saveRenderObject(const RenderObject& renderObject) {
-
-    std::string basePath = meshImportSavePath + renderObject.specifier;
-
-    std::ofstream outputFile(basePath + "-v.bin", std::ios::binary);
-    outputFile.write(reinterpret_cast<const char*>(renderObject.vertexData.data()), renderObject.vertexData.size());
-    outputFile.close();
-    
-    std::ofstream outputFile2(basePath + "-i.bin", std::ios::binary);
-    outputFile2.write(reinterpret_cast<const char*>(renderObject.indexData.data()), renderObject.indexData.size());
-    outputFile2.close();
-    
-}
-
-void Renderer::loadRenderObject(const std::string& specifier, RenderObject* renderObject) {
-    std::string basePath = meshImportSavePath + specifier;
-
-    std::string filepath = basePath + "-v.bin";
-    std::ifstream inputFile(filepath, std::ios::binary | std::ios::ate);
-
-    std::streamsize size = inputFile.tellg();
-    inputFile.seekg(0, std::ios::beg);
-    
-    renderObject->vertexData.resize(size);
-    
-    if (!inputFile.read(reinterpret_cast<char*>(renderObject->vertexData.data()), size)) {
-        fmt::println("Error reading file: " + filepath);
-    }
-    inputFile.close();
-    
-    std::string filepath2 = basePath + "-i.bin";
-    std::ifstream inputFile2(filepath2, std::ios::binary | std::ios::ate);
-
-    std::streamsize size2 = inputFile2.tellg();
-    inputFile2.seekg(0, std::ios::beg);
-    
-    renderObject->indexData.resize(size2);
-    
-    if (!inputFile2.read(reinterpret_cast<char*>(renderObject->indexData.data()), size2)) {
-        fmt::println("Error reading file: " + filepath2);
-    }
-    inputFile2.close();
-}
-
-void Renderer::processPrimitive(const tinygltf::Model& model, const tinygltf::Primitive& primitive, RenderObject* renderObject) {
-    GLTFBufferData posBufferData;
-    findDataFromAttribute(model, primitive, "POSITION", &posBufferData);
-
-    GLTFBufferData clrBufferData;
-    findDataFromAttribute(model, primitive, "COLOR_0", &clrBufferData);
-
-    assert(posBufferData.buffer != -1);
-    assert(posBufferData.type == TINYGLTF_TYPE_VEC3);
-
-    assert(clrBufferData.buffer != -1);
-    assert(clrBufferData.type == TINYGLTF_TYPE_VEC4);
-
-    int vertexCount = posBufferData.length / posBufferData.byteStride;
-
-    // division by 2 to go from uint16_t to uint8_t
-    renderObject->vertexData.resize(posBufferData.length + clrBufferData.length / 2);
-
-    const tinygltf::Buffer& clrBuffer = model.buffers[clrBufferData.buffer];
-    const tinygltf::Buffer& posBuffer = model.buffers[posBufferData.buffer];
-
-    // position data = 3 floats * 4 bytes per float = 12 bytes
-    // R,G,B,A one byte each = 4 bytes
-    int vertexByteStride = posBufferData.byteStride + clrBufferData.byteStride / 2;
-    for (int i = 0; i < vertexCount; i++) {
-
-        // we can memcpy the 12 bytes of position data (3 floats, 4 bytes each)
-        std::memcpy(&renderObject->vertexData[i * vertexByteStride + 0],
-            &posBuffer.data[posBufferData.offset + i * posBufferData.byteStride], posBufferData.byteStride);
-
-        // each color channel (RGBA) has to be converted from 16 bits to 8 bits
-        int clrOffset = clrBufferData.offset + i * clrBufferData.byteStride;
-
-        uint8_t a;
-        get8BitFrom16BitUInt(&a, &clrBuffer.data[clrOffset + 0]);
-        
-        uint8_t b;
-        get8BitFrom16BitUInt(&b, &clrBuffer.data[clrOffset + 2]);
-        
-        uint8_t g;
-        get8BitFrom16BitUInt(&g, &clrBuffer.data[clrOffset + 4]);
-        
-        uint8_t r;
-        get8BitFrom16BitUInt(&r, &clrBuffer.data[clrOffset + 6]);
-        
-        // manually packing in color data. structure is a-b-g-r
-        renderObject->vertexData[i * vertexByteStride + 12] = a;
-        renderObject->vertexData[i * vertexByteStride + 13] = b;
-        renderObject->vertexData[i * vertexByteStride + 14] = g;
-        renderObject->vertexData[i * vertexByteStride + 15] = r;
-    }
-
-    // index data is packed and can be memcpy'd
-    const tinygltf::Accessor& indicesAccessor = model.accessors[primitive.indices];
-    const tinygltf::BufferView& indicesBufferView = model.bufferViews[indicesAccessor.bufferView];
-    const tinygltf::Buffer& indicesBuffer = model.buffers[indicesBufferView.buffer];
-
-    renderObject->indexData.resize(indicesBufferView.byteLength / 2);
-    std::memcpy(&renderObject->indexData[0], &indicesBuffer.data[indicesBufferView.byteOffset], indicesBufferView.byteLength);
-    
-}
-
-// loadModel loads meshes from a gltf file into render objects
-void Renderer::loadModel(const std::string& fileName) {
-
-	tinygltf::Model model;
-	tinygltf::TinyGLTF loader;
-	std::string err;
-	std::string warn;
-
-	std::string ext = FileOps::getFilePathExtension(fileName);
-	
-	bool ret = false;
-	if (ext.compare("glb") == 0) {
-		ret = loader.LoadBinaryFromFile(&model, &err, &warn, fileName.c_str());
-	} else {
-		ret = loader.LoadASCIIFromFile(&model, &err, &warn, fileName.c_str());
-	}
-
-    // for each mesh, we want a render object
-	for (size_t i = 0; i < model.meshes.size(); i++) {
-		const tinygltf::Mesh& mesh = model.meshes[i];
-
-		for (size_t j = 0; j < mesh.primitives.size(); j++) {
-			const tinygltf::Primitive& primitive = mesh.primitives[j];
-
-			if (primitive.mode == TINYGLTF_MODE_TRIANGLES) {
-                RenderObject renderObject;
-                // this is dumb, but a hack for now
-                renderObject.specifier = std::filesystem::path(fileName).stem().string() + "-" + mesh.name + "-" + std::to_string(j);
-
-                if (std::filesystem::exists(meshImportSavePath + renderObject.specifier + "-v.bin") &&
-                    std::filesystem::exists(meshImportSavePath + renderObject.specifier + "-i.bin")) {
-                    loadRenderObject(renderObject.specifier, &renderObject);
-                } else {
-                    processPrimitive(model, primitive, &renderObject);
-                    saveRenderObject(renderObject);
-                }
-
-                // queue it for actual rendering
-                renderObjects.push_back(renderObject);
-			}
-		}
-
-	}
 }

@@ -23,6 +23,10 @@
             "name": "imgui",
             "version>=": "1.90.7",
             "features": ["sdl2-binding"]
+        },
+        {
+            "name": "stb",
+            "version>=": "2023-04-11"
         }
     ],
     "builtin-baseline": "f7423ee180c4b7f40d43402c2feb3859161ef625"
