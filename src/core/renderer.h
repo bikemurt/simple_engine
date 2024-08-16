@@ -16,9 +16,9 @@
 
 #include "tiny_gltf.h"
 
+#include "node.h"
 #include "render_object.h"
 #include "mesh.h"
-#include "node.h"
 
 class Renderer {
 
@@ -44,8 +44,8 @@ private:
 
     } context;
 
-    std::vector<Mesh> meshes;
     std::vector<RenderObject> renderObjects;
+    std::vector<Mesh> meshes;
     std::vector<Node> scenes;
 
     void setContextVertexLayout(const VertexLayout& vertexLayout);
@@ -56,6 +56,9 @@ private:
         
     bgfx::ShaderHandle createShader(const std::string& shader, const char* name);
 
+    void processScenes(const VertexLayout& vertexLayout);
+    void findRenderObjects(const VertexLayout& vertexLayout, const Node& node);
+
 public:
 
     bool active = true;
@@ -65,6 +68,7 @@ public:
     void setup();
     void renderFrame();
     void cleanup();
+
 };
 
 #endif

@@ -47,7 +47,7 @@ void GltfLoader::loadMeshes(std::vector<Mesh>& meshes) {
                     renderMesh.loadFromImportCache();
                 } else {
                     processPrimitive(primitive, renderMesh);
-                    renderMesh.saveToImportCache();
+                    //renderMesh.saveToImportCache();
                 }
 
                 meshes.push_back(std::move(renderMesh));
@@ -72,11 +72,15 @@ void GltfLoader::processNode(const tinygltf::Node& gltfNode, Node& node) {
     if (!gltfNode.translation.empty()) {
         node.translation = gltfNode.translation;
     }
-    node.updateTransform();
+    
+    // implementation not good right now
+    node.updateLocalTransform();
+    node.updateGlobalTransform();
 
-    for (size_t i = 0; i < gltfNode.children.size(); ++i) {
+    for (size_t i = 0; i < gltfNode.children.size(); i++) {
         const tinygltf::Node& childGltfNode = model.nodes[gltfNode.children[i]];
         Node childNode;
+        childNode.parent = &node;
         processNode(childGltfNode, childNode);
         node.children.push_back(std::move(childNode));
     }

@@ -9,6 +9,7 @@
 
 // module includes
 #include "fmt/format.h"
+#include "tiny_gltf.h"
 
 Renderer::Renderer() {
 }
@@ -61,6 +62,48 @@ void Renderer::cleanupWindow() {
     SDL_Quit();
 }
 
+void Renderer::findRenderObjects(const VertexLayout& vertexLayout, const Node& node) {
+    
+    if (node.meshIndex >= 0) {
+        // i do not like this solution involving the vertex layout... need to improve this (eventually)
+        // should meshes array be global for what is being rendered? i think yes
+        // in that case, this is broken
+
+        // another comment - we are effectively copying data from a Node into a RenderObject
+        // how to avoid the copy using polymorphism?
+        RenderObject renderObject(meshes[node.meshIndex], vertexLayout);
+        renderObject.rotation = node.rotation;
+        renderObject.scale = node.scale;
+        renderObject.translation = node.translation;
+        
+        std::copy(std::begin(node.localTransform), std::end(node.localTransform), std::begin(renderObject.localTransform));
+        std::copy(std::begin(node.globalTransform), std::end(node.globalTransform), std::begin(renderObject.globalTransform));
+
+        renderObjects.push_back(std::move(renderObject));
+    }
+
+    for (const Node& child : node.children) {
+        findRenderObjects(vertexLayout, child);
+    }
+}
+
+void Renderer::processScenes(const VertexLayout& vertexLayout) {
+    for (const Node& scene : scenes) {
+        findRenderObjects(vertexLayout, scene);
+    }
+}
+
+void Renderer::setContextVertexLayout(const VertexLayout& vertexLayout) {
+    context.layout.begin();
+    for (int i = 0; i < vertexLayout.items.size(); i++) {
+        const VertexLayoutItem& item = vertexLayout.items[i];
+        bool normalized = false;
+        if (item.attribute == "COLOR_0") normalized = true;
+        context.layout.add(item.bgfxAttrib, item.type, item.bgfxAttribType, normalized);
+    }
+    context.layout.end();
+}
+
 void Renderer::setup() {
     setupWindow();
 
@@ -94,27 +137,9 @@ void Renderer::setup() {
     g.loadMeshes(meshes);
     g.loadScenes(scenes);
 
-    // goal: a scene can contained mixed Node and RenderObject
-    // Node
-    // -- Node
-    // -- RenderObject
-    // -- -- Node
-    // ...
-
     // next: iterate through the scenes and come up with a flat render array
-
+    processScenes(vertexLayout);
     setContextVertexLayout(vertexLayout);
-
-    // SOLUTION
-    // vertex layout gets assigned to the RenderObject
-    // a reference is probably fine?
-
-    // do some magic for now, creating a whole bunch of renderObjects with that mesh
-    for (int i = 0; i < meshes.size(); i++) {
-        // hopefully not doing anything dumb here
-        // this should keep the "mesh" ownership in the meshes vector
-        renderObjects.push_back(RenderObject(meshes[i], vertexLayout));
-    }
 
     // FROM HERE FORWARD SHOULD NOT CHANGE TOO MUCH
     for (int i = 0; i < renderObjects.size(); i++) {
@@ -140,17 +165,6 @@ void Renderer::setup() {
     // third argument being true destroys shaders
     context.programHandle = bgfx::createProgram(vShader, fShader, true);
 
-}
-
-void Renderer::setContextVertexLayout(const VertexLayout& vertexLayout) {
-    context.layout.begin();
-    for (int i = 0; i < vertexLayout.items.size(); i++) {
-        const VertexLayoutItem& item = vertexLayout.items[i];
-        bool normalized = false;
-        if (item.attribute == "COLOR_0") normalized = true;
-        context.layout.add(item.bgfxAttrib, item.type, item.bgfxAttribType, normalized);
-    }
-    context.layout.end();
 }
 
 void Renderer::renderFrame() {
@@ -199,10 +213,7 @@ void Renderer::renderFrame() {
         bgfx::setVertexBuffer(0, renderObject.vertexBufferHandle);
         bgfx::setIndexBuffer(renderObject.indexBufferHandle);
 
-        // interesting possible optimization here
-        if (renderObject.updateTransformOnRenderFrame) renderObjects[i].updateTransform();
-        
-        bgfx::setTransform(renderObject.transform);
+        bgfx::setTransform(renderObject.globalTransform);
 
         uint64_t state = 0
             | BGFX_STATE_WRITE_R

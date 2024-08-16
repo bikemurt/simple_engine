@@ -11,15 +11,18 @@ public:
     std::vector<double> scale = { 1, 1, 1 };
     std::vector<double> translation = { 0, 0, 0 };
 
-    float transform[16];
+    float globalTransform[16];
+    float localTransform[16];
 
-    int meshIndex;
+    int meshIndex = -1;
 
-    bool updateTransformOnRenderFrame = true;
-
+    const Node* parent = nullptr;
     std::vector<Node> children;
     
-    void updateTransform();
+    void updateLocalTransform();
+    void updateGlobalTransform();
+
+    Node();
 };
 
 #endif

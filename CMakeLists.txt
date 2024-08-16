@@ -17,8 +17,9 @@ set(PRJ_HEADERS
 set(PRJ_SOURCES
     src/main.cpp
     src/core/renderer.cpp
-    src/core/mesh.cpp
+    src/core/node.cpp
     src/core/render_object.cpp
+    src/core/mesh.cpp
 
     src/utils/fileops.cpp
     src/importers/gltf_loader.cpp
