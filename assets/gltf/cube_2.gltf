@@ -8,14 +8,36 @@
 		{
 			"name":"Scene",
 			"nodes":[
-				0
+				1
 			]
 		}
 	],
 	"nodes":[
 		{
 			"mesh":0,
-			"name":"Cube"
+			"name":"Cube",
+			"rotation":[
+				0,
+				-0.2591916620731354,
+				0,
+				0.9658259153366089
+			],
+			"scale":[
+				1.2083970308303833,
+				1.2083970308303833,
+				1.2083970308303833
+			],
+			"translation":[
+				0,
+				1.0107303857803345,
+				0
+			]
+		},
+		{
+			"children":[
+				0
+			],
+			"name":"Empty"
 		}
 	],
 	"meshes":[
@@ -27,10 +49,9 @@
 						"COLOR_0":0,
 						"POSITION":1,
 						"NORMAL":2,
-						"TEXCOORD_0":3,
-						"TANGENT":4
+						"TEXCOORD_0":3
 					},
-					"indices":5
+					"indices":4
 				}
 			]
 		}
@@ -73,12 +94,6 @@
 		},
 		{
 			"bufferView":4,
-			"componentType":5126,
-			"count":24,
-			"type":"VEC4"
-		},
-		{
-			"bufferView":5,
 			"componentType":5123,
 			"count":36,
 			"type":"SCALAR"
@@ -111,20 +126,14 @@
 		},
 		{
 			"buffer":0,
-			"byteLength":384,
-			"byteOffset":960,
-			"target":34962
-		},
-		{
-			"buffer":0,
 			"byteLength":72,
-			"byteOffset":1344,
+			"byteOffset":960,
 			"target":34963
 		}
 	],
 	"buffers":[
 		{
-			"byteLength":1416,
+			"byteLength":1032,
 			"uri":"cube_2.bin"
 		}
 	]

@@ -15,12 +15,13 @@ class GltfLoader {
 
 private:
 
-    std::string meshImportSavePath = "C:\\Projects\\CppTesting\\simple_engine\\imports\\meshes\\";
-
     const VertexLayout& vertexLayout;
     std::string fileName;
+    
+	tinygltf::Model model;
+	tinygltf::TinyGLTF loader;
 
-    void processPrimitive(const tinygltf::Model& model, const tinygltf::Primitive& primitive, Mesh* renderMesh);
+    void processPrimitive(const tinygltf::Primitive& primitive, Mesh& renderMesh);
 
     struct GLTFBufferData {
         size_t count = 0;
@@ -31,13 +32,15 @@ private:
         size_t offset = 0;
         size_t length = 0;
     };
-    void findDataFromAttribute(const tinygltf::Model& model, const tinygltf::Primitive& primitive, const char* attribute, GLTFBufferData* bufferData);
-    void get8BitFrom16BitUInt(uint8_t* dest, const void* source);
+    void findDataFromAttribute(const tinygltf::Primitive& primitive, const char* attribute, GLTFBufferData& bufferData);
+    void convert16BitUintTo8Bit(uint8_t* dest, const void* source);
+    void processNode(const tinygltf::Node& gltfNode, Node& node);
 
 public:
     
     GltfLoader(std::string fileName, const VertexLayout& vertexLayout);
     void loadMeshes(std::vector<Mesh>& meshes);
+    void loadScenes(std::vector<Node>& scenes);
 
 };
 

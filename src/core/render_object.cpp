@@ -10,7 +10,6 @@ RenderObject::RenderObject(const Mesh& mesh, const VertexLayout& vertexLayout) :
 
 }
 
-
 void RenderObject::vertexLayoutItemHelper(VertexLayoutItem& item, const std::string& attribute) {
 
     int type = TINYGLTF_TYPE_VEC3;

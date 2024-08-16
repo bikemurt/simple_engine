@@ -18,6 +18,7 @@
 
 #include "render_object.h"
 #include "mesh.h"
+#include "node.h"
 
 class Renderer {
 
@@ -45,6 +46,7 @@ private:
 
     std::vector<Mesh> meshes;
     std::vector<RenderObject> renderObjects;
+    std::vector<Node> scenes;
 
     void setContextVertexLayout(const VertexLayout& vertexLayout);
 

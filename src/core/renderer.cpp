@@ -92,6 +92,16 @@ void Renderer::setup() {
     // PIPELINE TESTING
     GltfLoader g("../../assets/gltf/cube_2.gltf", vertexLayout);
     g.loadMeshes(meshes);
+    g.loadScenes(scenes);
+
+    // goal: a scene can contained mixed Node and RenderObject
+    // Node
+    // -- Node
+    // -- RenderObject
+    // -- -- Node
+    // ...
+
+    // next: iterate through the scenes and come up with a flat render array
 
     setContextVertexLayout(vertexLayout);
 
@@ -184,8 +194,15 @@ void Renderer::renderFrame() {
     bgfx::setTransform(model);
 
     for (int i = 0; i < renderObjects.size(); i++) {
-        bgfx::setVertexBuffer(0, renderObjects[i].vertexBufferHandle);
-        bgfx::setIndexBuffer(renderObjects[i].indexBufferHandle);
+        const RenderObject& renderObject = renderObjects[i];
+
+        bgfx::setVertexBuffer(0, renderObject.vertexBufferHandle);
+        bgfx::setIndexBuffer(renderObject.indexBufferHandle);
+
+        // interesting possible optimization here
+        if (renderObject.updateTransformOnRenderFrame) renderObjects[i].updateTransform();
+        
+        bgfx::setTransform(renderObject.transform);
 
         uint64_t state = 0
             | BGFX_STATE_WRITE_R

@@ -16,12 +16,6 @@
 
 GltfLoader::GltfLoader(std::string fileName, const VertexLayout& vertexLayout) :
     fileName(fileName), vertexLayout(vertexLayout) {
-}
-
-void GltfLoader::loadMeshes(std::vector<Mesh>& meshes) {
-
-	tinygltf::Model model;
-	tinygltf::TinyGLTF loader;
 	std::string err;
 	std::string warn;
 
@@ -33,7 +27,9 @@ void GltfLoader::loadMeshes(std::vector<Mesh>& meshes) {
 	} else {
 		ret = loader.LoadASCIIFromFile(&model, &err, &warn, fileName.c_str());
 	}
+}
 
+void GltfLoader::loadMeshes(std::vector<Mesh>& meshes) {
 	for (size_t i = 0; i < model.meshes.size(); i++) {
 		const tinygltf::Mesh& mesh = model.meshes[i];
 
@@ -44,14 +40,14 @@ void GltfLoader::loadMeshes(std::vector<Mesh>& meshes) {
                 Mesh renderMesh;
 
                 // this is dumb, but a hack for now
+                // breaks as soon as you have 2 gltf files with the same name, same object names, and primitive number
                 renderMesh.specifier = std::filesystem::path(fileName).stem().string() + "-" + mesh.name + "-" + std::to_string(j);
 
-                if (std::filesystem::exists(meshImportSavePath + renderMesh.specifier + "-v.bin") &&
-                    std::filesystem::exists(meshImportSavePath + renderMesh.specifier + "-i.bin")) {
+                if (renderMesh.existsInImportCache()) {
                     renderMesh.loadFromImportCache();
                 } else {
-                    processPrimitive(model, primitive, &renderMesh);
-                    //renderMesh.saveToImportCache();
+                    processPrimitive(primitive, renderMesh);
+                    renderMesh.saveToImportCache();
                 }
 
                 meshes.push_back(std::move(renderMesh));
@@ -59,31 +55,66 @@ void GltfLoader::loadMeshes(std::vector<Mesh>& meshes) {
 		}
 
 	}
+
 }
 
-void GltfLoader::findDataFromAttribute(const tinygltf::Model& model, const tinygltf::Primitive& primitive, const char* attribute, GLTFBufferData* bufferData) {
+void GltfLoader::processNode(const tinygltf::Node& gltfNode, Node& node) {
+    node.meshIndex = gltfNode.mesh;
+
+    if (!gltfNode.rotation.empty()) {
+        node.rotation = gltfNode.rotation;
+    }
+
+    if (!gltfNode.scale.empty()) {
+        node.scale = gltfNode.scale;
+    }
+    
+    if (!gltfNode.translation.empty()) {
+        node.translation = gltfNode.translation;
+    }
+    node.updateTransform();
+
+    for (size_t i = 0; i < gltfNode.children.size(); ++i) {
+        const tinygltf::Node& childGltfNode = model.nodes[gltfNode.children[i]];
+        Node childNode;
+        processNode(childGltfNode, childNode);
+        node.children.push_back(std::move(childNode));
+    }
+}
+void GltfLoader::loadScenes(std::vector<Node>& scenes) {
+    for (const tinygltf::Scene& scene : model.scenes) {
+        for (size_t i = 0; i < scene.nodes.size(); i++) {
+            const tinygltf::Node& gltfNode = model.nodes[scene.nodes[i]];
+            Node rootNode;
+            processNode(gltfNode, rootNode);
+            scenes.push_back(std::move(rootNode));
+        }
+    }
+}
+
+void GltfLoader::findDataFromAttribute(const tinygltf::Primitive& primitive, const char* attribute, GLTFBufferData& bufferData) {
     std::map<std::string, int>::const_iterator pos = primitive.attributes.find(attribute);
     if (pos != primitive.attributes.end()) {
         
         int accessorIndex = pos->second;
         const tinygltf::Accessor& accessor = model.accessors[accessorIndex];
         
-        bufferData->count = accessor.count;
-        bufferData->type = accessor.type;
-        bufferData->componentType = accessor.componentType;
+        bufferData.count = accessor.count;
+        bufferData.type = accessor.type;
+        bufferData.componentType = accessor.componentType;
 
         int bufferViewIndex = accessor.bufferView;
         const tinygltf::BufferView& bufferView = model.bufferViews[bufferViewIndex];
         
-        bufferData->byteStride = accessor.ByteStride(bufferView);
+        bufferData.byteStride = accessor.ByteStride(bufferView);
 
-        bufferData->buffer = bufferView.buffer;
-        bufferData->offset = bufferView.byteOffset;
-        bufferData->length = bufferView.byteLength;
+        bufferData.buffer = bufferView.buffer;
+        bufferData.offset = bufferView.byteOffset;
+        bufferData.length = bufferView.byteLength;
     }
 }
 
-void GltfLoader::get8BitFrom16BitUInt(uint8_t* dest, const void* source) {
+void GltfLoader::convert16BitUintTo8Bit(uint8_t* dest, const void* source) {
     uint16_t v_16;
 
     // a little bit obscure, but works
@@ -95,7 +126,7 @@ void GltfLoader::get8BitFrom16BitUInt(uint8_t* dest, const void* source) {
     *dest = v_16 >> 8;
 }
 
-void GltfLoader::processPrimitive(const tinygltf::Model& model, const tinygltf::Primitive& primitive, Mesh* mesh) {
+void GltfLoader::processPrimitive(const tinygltf::Primitive& primitive, Mesh& mesh) {
     
     // assert that the vertex layout is correct and add all buffers
     std::vector<GLTFBufferData> accessorBuffers;
@@ -104,7 +135,7 @@ void GltfLoader::processPrimitive(const tinygltf::Model& model, const tinygltf::
     int vertexCount = -1;
     for (const VertexLayoutItem& item : vertexLayout.items) {
         GLTFBufferData bufferData;
-        findDataFromAttribute(model, primitive, item.attribute.c_str(), &bufferData);
+        findDataFromAttribute(primitive, item.attribute.c_str(), bufferData);
         assert(bufferData.buffer != -1);
         assert(bufferData.type == item.type);
 
@@ -123,7 +154,7 @@ void GltfLoader::processPrimitive(const tinygltf::Model& model, const tinygltf::
         accessorBuffers.push_back(std::move(bufferData));
     }
 
-    mesh->vertexData.resize(vertexLayout.byteStride * vertexCount);
+    mesh.vertexData.resize(vertexLayout.byteStride * vertexCount);
     for (int i = 0; i < vertexCount; i++) {
 
         // let's call this the "PACKED" vertex data structure
@@ -151,14 +182,14 @@ void GltfLoader::processPrimitive(const tinygltf::Model& model, const tinygltf::
                 for (int k = 0; k < 4; k++) {
                     uint8_t x;
                     // after the gltf data offset, increment by 2 bytes, to get a-b-g-r channels
-                    get8BitFrom16BitUInt(&x, &buffer.data[gltfDataOffset + k * 2]);
+                    convert16BitUintTo8Bit(&x, &buffer.data[gltfDataOffset + k * 2]);
 
                     // this part is tricky too - from the packed data offset, we bump up by 1 byte each j index
-                    mesh->vertexData[packedDataOffset + k * 1] = x;
+                    mesh.vertexData[packedDataOffset + k * 1] = x;
                 }
                 packedOffsetCounter += 4;
             } else {
-                std::memcpy(&mesh->vertexData[packedDataOffset], &buffer.data[gltfDataOffset], bufferData.byteStride);
+                std::memcpy(&mesh.vertexData[packedDataOffset], &buffer.data[gltfDataOffset], bufferData.byteStride);
                 packedOffsetCounter += bufferData.byteStride;
             }
         }
@@ -171,6 +202,6 @@ void GltfLoader::processPrimitive(const tinygltf::Model& model, const tinygltf::
 
     // validate indices are 16 bit integers
     assert(indicesAccessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT);
-    mesh->indexData.resize(indicesBufferView.byteLength / 2);
-    std::memcpy(&mesh->indexData[0], &indicesBuffer.data[indicesBufferView.byteOffset], indicesBufferView.byteLength);
+    mesh.indexData.resize(indicesBufferView.byteLength / 2);
+    std::memcpy(&mesh.indexData[0], &indicesBuffer.data[indicesBufferView.byteOffset], indicesBufferView.byteLength);
 }
