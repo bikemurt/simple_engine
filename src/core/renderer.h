@@ -44,6 +44,8 @@ private:
 
     } context;
 
+    int64_t timeOffset;
+
     std::vector<RenderObject*> renderObjects;
     std::vector<Mesh> meshes;
     std::vector<std::unique_ptr<Node>> scenes;

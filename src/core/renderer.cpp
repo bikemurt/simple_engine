@@ -8,6 +8,7 @@
 #include "../importers/gltf_loader.h"
 
 // module includes
+#include "bx/timer.h"
 #include "fmt/format.h"
 #include "tiny_gltf.h"
 
@@ -43,9 +44,17 @@ void Renderer::handleEvents() {
 
         switch (event.type) {
             case SDL_KEYDOWN:
-                case SDLK_ESCAPE:
-                    active = false;
-                    break;
+                switch(event.key.keysym.sym) {              
+                    case SDLK_ESCAPE:
+                        active = false;
+                        break;
+
+                    case SDLK_k:
+                        double a[3] = {0, 1.0, 0};
+                        scenes[0]->setTranslation(a, 0b010);
+                        scenes[0]->updateLocalTransform();
+                        break;
+                }
 
             case SDL_WINDOWEVENT:
                 switch (event.window.event) {
@@ -154,6 +163,7 @@ void Renderer::setup() {
     // third argument being true destroys shaders
     context.programHandle = bgfx::createProgram(vShader, fShader, true);
 
+    timeOffset = bx::getHPCounter();
 }
 
 void Renderer::renderFrame() {
@@ -170,6 +180,12 @@ void Renderer::renderFrame() {
     }
     context.prevMouseX = mouseX;
     context.prevMouseY = mouseY;
+
+    float time = (float)((bx::getHPCounter() - timeOffset) / double(bx::getHPFrequency()));
+
+    double a[3] = {0, 0.2 * bx::sin(10.0 * time), 0};
+    scenes[3]->setTranslation(a, 0b010);
+    scenes[3]->updateLocalTransform();
 
     float camRotation[16];
     bx::mtxRotateXYZ(camRotation, context.camPitch, context.camYaw, 0.0f);
@@ -192,12 +208,19 @@ void Renderer::renderFrame() {
 
     bgfx::touch(0);
 
+    // problem... render order matters
+    // can we guarantee that parent nodes are parsed first?
+    // assume yes
+
+    
+
     for (int i = 0; i < renderObjects.size(); i++) {
         RenderObject* renderObject = renderObjects[i];
 
         bgfx::setVertexBuffer(0, renderObject->vertexBufferHandle);
         bgfx::setIndexBuffer(renderObject->indexBufferHandle);
 
+        renderObject->cleanTransforms();
         bgfx::setTransform(renderObject->globalTransform);
 
         uint64_t state = 0

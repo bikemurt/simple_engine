@@ -52,6 +52,7 @@ bgfx::Attrib::Enum RenderObject::getBGFXAttribute(const std::string& attribute) 
 bgfx::AttribType::Enum RenderObject::getBGFXAttribType(int componentType) {
     if (componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_BYTE) return bgfx::AttribType::Uint8;
     else if (componentType == TINYGLTF_COMPONENT_TYPE_FLOAT) return bgfx::AttribType::Float;
+    return bgfx::AttribType::Float;
 }
 
 void RenderObject::vertexLayoutHelper(VertexLayout& layout, const std::vector<std::string>& attributes) {

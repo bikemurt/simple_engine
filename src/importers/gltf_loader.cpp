@@ -68,20 +68,20 @@ void GltfLoader::processNode(const tinygltf::Node& gltfNode, std::unique_ptr<Nod
     node->parent = parentNode;
 
     if (!gltfNode.rotation.empty()) {
-        node->rotation = gltfNode.rotation;
+        node->setRotation(gltfNode.rotation.data());
     }
 
     if (!gltfNode.scale.empty()) {
-        node->scale = gltfNode.scale;
+        node->setScale(gltfNode.scale.data());
     }
     
     if (!gltfNode.translation.empty()) {
-        node->translation = gltfNode.translation;
+        node->setTranslation(gltfNode.translation.data());
     }
-    
-    // implementation not good right now
+
+    // since we are in the GLTF loader, i don't really care about being efficient
+    // always update the local transform for every node
     node->updateLocalTransform();
-    node->updateGlobalTransform();
 
     for (size_t i = 0; i < gltfNode.children.size(); i++) {
         const tinygltf::Node& childGltfNode = model.nodes[gltfNode.children[i]];
