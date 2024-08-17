@@ -1,6 +1,7 @@
-#ifndef NODE3D_H
-#define NODE3D_H
+#ifndef NODE_H
+#define NODE_H
 
+#include <memory>
 #include <vector>
 
 class Node {
@@ -14,15 +15,15 @@ public:
     float globalTransform[16];
     float localTransform[16];
 
-    int meshIndex = -1;
-
     const Node* parent = nullptr;
-    std::vector<Node> children;
+    std::vector<std::unique_ptr<Node>> children;
     
     void updateLocalTransform();
     void updateGlobalTransform();
 
     Node();
+
+    virtual ~Node() = default;
 };
 
 #endif

@@ -20,7 +20,6 @@ void Node::updateLocalTransform() {
     bx::Quaternion rotation(rotation[0], rotation[1], rotation[2], rotation[3]);
 
     float scaleMatrix[16];
-    bx::mtxIdentity(scaleMatrix);
     bx::mtxScale(scaleMatrix, scale[0], scale[1], scale[2]);
 
     float rotationMatrix[16];
@@ -31,11 +30,13 @@ void Node::updateLocalTransform() {
     bx::mtxTranslate(translationMatrix, translation[0], translation[1], translation[2]);
 
     // always do this part - multiply the 3 matrices together
+    // correct order is: scale - rotation - translation
+
     float tempMatrix[16];
-    bx::mtxMul(tempMatrix, rotationMatrix, scaleMatrix);
+    bx::mtxMul(tempMatrix, scaleMatrix, rotationMatrix);
     
     // finally, set the transform matrix
-    bx::mtxMul(localTransform, translationMatrix, tempMatrix);
+    bx::mtxMul(localTransform, tempMatrix, translationMatrix);
 
 }
 

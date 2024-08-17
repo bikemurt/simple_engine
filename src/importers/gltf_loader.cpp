@@ -14,8 +14,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "tiny_gltf.h"
 
-GltfLoader::GltfLoader(std::string fileName, const VertexLayout& vertexLayout) :
-    fileName(fileName), vertexLayout(vertexLayout) {
+GltfLoader::GltfLoader(std::string fileName, const VertexLayout& vertexLayout, const std::vector<Mesh>& meshes) :
+    fileName(fileName), vertexLayout(vertexLayout), meshes(meshes) {
 	std::string err;
 	std::string warn;
 
@@ -29,7 +29,7 @@ GltfLoader::GltfLoader(std::string fileName, const VertexLayout& vertexLayout) :
 	}
 }
 
-void GltfLoader::loadMeshes(std::vector<Mesh>& meshes) {
+void GltfLoader::loadMeshes(std::vector<Mesh>& _meshes) {
 	for (size_t i = 0; i < model.meshes.size(); i++) {
 		const tinygltf::Mesh& mesh = model.meshes[i];
 
@@ -50,7 +50,7 @@ void GltfLoader::loadMeshes(std::vector<Mesh>& meshes) {
                     //renderMesh.saveToImportCache();
                 }
 
-                meshes.push_back(std::move(renderMesh));
+                _meshes.push_back(std::move(renderMesh));
 			}
 		}
 
@@ -58,39 +58,44 @@ void GltfLoader::loadMeshes(std::vector<Mesh>& meshes) {
 
 }
 
-void GltfLoader::processNode(const tinygltf::Node& gltfNode, Node& node) {
-    node.meshIndex = gltfNode.mesh;
+void GltfLoader::processNode(const tinygltf::Node& gltfNode, std::unique_ptr<Node>& node, Node* parentNode) {
+
+    if (gltfNode.mesh >= 0) {
+        node = std::make_unique<RenderObject>(meshes[gltfNode.mesh], vertexLayout);
+    } else {
+        node = std::make_unique<Node>();
+    }
+    node->parent = parentNode;
 
     if (!gltfNode.rotation.empty()) {
-        node.rotation = gltfNode.rotation;
+        node->rotation = gltfNode.rotation;
     }
 
     if (!gltfNode.scale.empty()) {
-        node.scale = gltfNode.scale;
+        node->scale = gltfNode.scale;
     }
     
     if (!gltfNode.translation.empty()) {
-        node.translation = gltfNode.translation;
+        node->translation = gltfNode.translation;
     }
     
     // implementation not good right now
-    node.updateLocalTransform();
-    node.updateGlobalTransform();
+    node->updateLocalTransform();
+    node->updateGlobalTransform();
 
     for (size_t i = 0; i < gltfNode.children.size(); i++) {
         const tinygltf::Node& childGltfNode = model.nodes[gltfNode.children[i]];
-        Node childNode;
-        childNode.parent = &node;
-        processNode(childGltfNode, childNode);
-        node.children.push_back(std::move(childNode));
+        std::unique_ptr<Node> childNode;
+        processNode(childGltfNode, childNode, node.get());
+        node->children.push_back(std::move(childNode));
     }
 }
-void GltfLoader::loadScenes(std::vector<Node>& scenes) {
+void GltfLoader::loadScenes(std::vector<std::unique_ptr<Node>>& scenes) {
     for (const tinygltf::Scene& scene : model.scenes) {
         for (size_t i = 0; i < scene.nodes.size(); i++) {
             const tinygltf::Node& gltfNode = model.nodes[scene.nodes[i]];
-            Node rootNode;
-            processNode(gltfNode, rootNode);
+            std::unique_ptr<Node> rootNode;
+            processNode(gltfNode, rootNode, nullptr);
             scenes.push_back(std::move(rootNode));
         }
     }

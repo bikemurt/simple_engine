@@ -1,6 +1,7 @@
 #ifndef GLTF_LOADER_H
 #define GLTF_LOADER_H
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <array>
@@ -16,6 +17,8 @@ class GltfLoader {
 private:
 
     const VertexLayout& vertexLayout;
+    const std::vector<Mesh>& meshes;
+
     std::string fileName;
     
 	tinygltf::Model model;
@@ -34,13 +37,13 @@ private:
     };
     void findDataFromAttribute(const tinygltf::Primitive& primitive, const char* attribute, GLTFBufferData& bufferData);
     void convert16BitUintTo8Bit(uint8_t* dest, const void* source);
-    void processNode(const tinygltf::Node& gltfNode, Node& node);
+    void processNode(const tinygltf::Node& gltfNode, std::unique_ptr<Node>& node, Node* parentNode);
 
 public:
     
-    GltfLoader(std::string fileName, const VertexLayout& vertexLayout);
+    GltfLoader(std::string fileName, const VertexLayout& vertexLayout, const std::vector<Mesh>& meshes);
     void loadMeshes(std::vector<Mesh>& meshes);
-    void loadScenes(std::vector<Node>& scenes);
+    void loadScenes(std::vector<std::unique_ptr<Node>>& scenes);
 
 };
 

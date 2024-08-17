@@ -9,6 +9,7 @@
 #include "bx/bx.h"
 #include "bx/math.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 #include <fstream>
@@ -31,7 +32,6 @@ private:
         uint32_t width = 800;
         uint32_t height = 600;
 
-        // library types in an internal class are OK
         bgfx::VertexLayout layout;
         bgfx::ProgramHandle programHandle;
 
@@ -44,9 +44,9 @@ private:
 
     } context;
 
-    std::vector<RenderObject> renderObjects;
+    std::vector<RenderObject*> renderObjects;
     std::vector<Mesh> meshes;
-    std::vector<Node> scenes;
+    std::vector<std::unique_ptr<Node>> scenes;
 
     void setContextVertexLayout(const VertexLayout& vertexLayout);
 
@@ -56,8 +56,8 @@ private:
         
     bgfx::ShaderHandle createShader(const std::string& shader, const char* name);
 
-    void processScenes(const VertexLayout& vertexLayout);
-    void findRenderObjects(const VertexLayout& vertexLayout, const Node& node);
+    void processScenes();
+    void findRenderObjects(const std::unique_ptr<Node>& node);
 
 public:
 

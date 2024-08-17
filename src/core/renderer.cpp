@@ -62,34 +62,21 @@ void Renderer::cleanupWindow() {
     SDL_Quit();
 }
 
-void Renderer::findRenderObjects(const VertexLayout& vertexLayout, const Node& node) {
-    
-    if (node.meshIndex >= 0) {
-        // i do not like this solution involving the vertex layout... need to improve this (eventually)
-        // should meshes array be global for what is being rendered? i think yes
-        // in that case, this is broken
+void Renderer::findRenderObjects(const std::unique_ptr<Node>& node) {
 
-        // another comment - we are effectively copying data from a Node into a RenderObject
-        // how to avoid the copy using polymorphism?
-        RenderObject renderObject(meshes[node.meshIndex], vertexLayout);
-        renderObject.rotation = node.rotation;
-        renderObject.scale = node.scale;
-        renderObject.translation = node.translation;
-        
-        std::copy(std::begin(node.localTransform), std::end(node.localTransform), std::begin(renderObject.localTransform));
-        std::copy(std::begin(node.globalTransform), std::end(node.globalTransform), std::begin(renderObject.globalTransform));
-
-        renderObjects.push_back(std::move(renderObject));
+    // if the node is a RenderObject, that add it to our list of render objects (pointers)    
+    if (RenderObject* renderObject = dynamic_cast<RenderObject*>(node.get())) {
+        renderObjects.push_back(renderObject);
     }
 
-    for (const Node& child : node.children) {
-        findRenderObjects(vertexLayout, child);
+    for (const std::unique_ptr<Node>& child : node->children) {
+        findRenderObjects(child);
     }
 }
 
-void Renderer::processScenes(const VertexLayout& vertexLayout) {
-    for (const Node& scene : scenes) {
-        findRenderObjects(vertexLayout, scene);
+void Renderer::processScenes() {
+    for (const std::unique_ptr<Node>& scene : scenes) {
+        findRenderObjects(scene);
     }
 }
 
@@ -133,23 +120,25 @@ void Renderer::setup() {
     RenderObject::vertexLayoutHelper(vertexLayout, attributes);
 
     // PIPELINE TESTING
-    GltfLoader g("../../assets/gltf/cube_2.gltf", vertexLayout);
+    GltfLoader g("../../assets/gltf/cube_2.gltf", vertexLayout, meshes);
+    
+    // ORDER DEPENDENT...
     g.loadMeshes(meshes);
     g.loadScenes(scenes);
 
-    // next: iterate through the scenes and come up with a flat render array
-    processScenes(vertexLayout);
+    // next: parse the scene graph - right now we are only extracting the RenderObjects and submitting them to the render queue
+    processScenes();
     setContextVertexLayout(vertexLayout);
 
     // FROM HERE FORWARD SHOULD NOT CHANGE TOO MUCH
     for (int i = 0; i < renderObjects.size(); i++) {
-        renderObjects[i].vertexBufferHandle = bgfx::createVertexBuffer(
-            bgfx::makeRef(&renderObjects[i].mesh.vertexData[0], renderObjects[i].mesh.vertexData.size() * sizeof(uint8_t)),
+        renderObjects[i]->vertexBufferHandle = bgfx::createVertexBuffer(
+            bgfx::makeRef(&renderObjects[i]->mesh.vertexData[0], renderObjects[i]->mesh.vertexData.size() * sizeof(uint8_t)),
             context.layout
             );
         
-        renderObjects[i].indexBufferHandle = bgfx::createIndexBuffer(
-            bgfx::makeRef(&renderObjects[i].mesh.indexData[0], renderObjects[i].mesh.indexData.size() * sizeof(uint16_t))
+        renderObjects[i]->indexBufferHandle = bgfx::createIndexBuffer(
+            bgfx::makeRef(&renderObjects[i]->mesh.indexData[0], renderObjects[i]->mesh.indexData.size() * sizeof(uint16_t))
             );
     }
 
@@ -176,8 +165,8 @@ void Renderer::renderFrame() {
     if ((buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) {
         int delta_x = mouseX - context.prevMouseX;
         int delta_y = mouseY - context.prevMouseY;
-        context.camYaw += float(-delta_x) * context.rotScale;
-        context.camPitch += float(-delta_y) * context.rotScale;
+        context.camYaw += float(delta_x) * context.rotScale;
+        context.camPitch += float(delta_y) * context.rotScale;
     }
     context.prevMouseX = mouseX;
     context.prevMouseY = mouseY;
@@ -186,7 +175,7 @@ void Renderer::renderFrame() {
     bx::mtxRotateXYZ(camRotation, context.camPitch, context.camYaw, 0.0f);
 
     float camTranslation[16];
-    bx::mtxTranslate(camTranslation, 0.0f, 0.0f, -5.0f);
+    bx::mtxTranslate(camTranslation, 0.0f, 0.0f, 5.0f);
 
     float camTransform[16];
     bx::mtxMul(camTransform, camTranslation, camRotation);
@@ -197,23 +186,19 @@ void Renderer::renderFrame() {
     float proj[16];
     bx::mtxProj(
         proj, 60.0f, float(context.width) / float(context.height), 0.1f,
-        100.0f, bgfx::getCaps()->homogeneousDepth);
+        100.0f, bgfx::getCaps()->homogeneousDepth, bx::Handedness::Right);
 
     bgfx::setViewTransform(0, view, proj);
 
     bgfx::touch(0);
 
-    float model[16];
-    bx::mtxIdentity(model);
-    bgfx::setTransform(model);
-
     for (int i = 0; i < renderObjects.size(); i++) {
-        const RenderObject& renderObject = renderObjects[i];
+        RenderObject* renderObject = renderObjects[i];
 
-        bgfx::setVertexBuffer(0, renderObject.vertexBufferHandle);
-        bgfx::setIndexBuffer(renderObject.indexBufferHandle);
+        bgfx::setVertexBuffer(0, renderObject->vertexBufferHandle);
+        bgfx::setIndexBuffer(renderObject->indexBufferHandle);
 
-        bgfx::setTransform(renderObject.globalTransform);
+        bgfx::setTransform(renderObject->globalTransform);
 
         uint64_t state = 0
             | BGFX_STATE_WRITE_R
@@ -236,8 +221,8 @@ void Renderer::renderFrame() {
 
 void Renderer::cleanup() {
     for (int i = 0; i < renderObjects.size(); i++) {
-        bgfx::destroy(renderObjects[i].vertexBufferHandle);
-        bgfx::destroy(renderObjects[i].indexBufferHandle);
+        bgfx::destroy(renderObjects[i]->vertexBufferHandle);
+        bgfx::destroy(renderObjects[i]->indexBufferHandle);
     }
 
     bgfx::destroy(context.programHandle);
