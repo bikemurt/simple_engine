@@ -45,7 +45,7 @@ If you aren't familiar with `vcpkg`, take a look at `vcpkg.json` above. It's fai
 In `vscode` I'm using the `CMake Tools` extension, and there's one additional setting needed in order to integrate with `vcpkg`:
 ![image](https://github.com/bikemurt/simple_engine/assets/23486102/49cea7ce-8140-4d19-8a9d-ca4b4ff6d033)
 
-It incorporates the `vcpkg.cmake` file into the toolchain:
+It incorporates the `vcpkg.cmake` file into the toolchain (you'll need to set up the [vcpkg/CMake](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started-vscode?pivots=shell-cmd#1---set-up-vcpkg) tooling first):
 
 `-DCMAKE_TOOLCHAIN_FILE=C:\Projects\CppTesting\vc_package_test\vcpkg\scripts\buildsystems\vcpkg.cmake`
 
