@@ -50,3 +50,12 @@ It incorporates the `vcpkg.cmake` file into the toolchain (you'll need to set up
 `-DCMAKE_TOOLCHAIN_FILE=C:\path_to_vcpkg\scripts\buildsystems\vcpkg.cmake`
 
 Hit `Ctrl+Shift+P` to bring up the command pallette in `VSCode`. Scan for toolkits in CMake, select the appropriate one, then configure the project. Afterwards you should be able to build using the cmake build command. First time build might take a few minutes to download all the dependencies and build, prior to building this application.
+
+## First time running the SimpleEngine:
+
+It will probably crash immediately. This is likely because the shaders aren't built.
+
+1. Navigate to `assets/shaders` in a terminal
+2. Run `.\compile_shaders_win.bat`
+
+Try re-running the SimpleEngine.
