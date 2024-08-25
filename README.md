@@ -47,6 +47,6 @@ In `vscode` I'm using the `CMake Tools` extension, and there's one additional se
 
 It incorporates the `vcpkg.cmake` file into the toolchain (you'll need to set up the [vcpkg/CMake](https://learn.microsoft.com/en-us/vcpkg/get_started/get-started-vscode?pivots=shell-cmd#1---set-up-vcpkg) tooling first):
 
-`-DCMAKE_TOOLCHAIN_FILE=C:\Projects\CppTesting\vc_package_test\vcpkg\scripts\buildsystems\vcpkg.cmake`
+`-DCMAKE_TOOLCHAIN_FILE=C:\path_to_vcpkg\scripts\buildsystems\vcpkg.cmake`
 
 Hit `Ctrl+Shift+P` to bring up the command pallette in `VSCode`. Scan for toolkits in CMake, select the appropriate one, then configure the project. Afterwards you should be able to build using the cmake build command.
