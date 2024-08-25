@@ -49,4 +49,4 @@ It incorporates the `vcpkg.cmake` file into the toolchain (you'll need to set up
 
 `-DCMAKE_TOOLCHAIN_FILE=C:\path_to_vcpkg\scripts\buildsystems\vcpkg.cmake`
 
-Hit `Ctrl+Shift+P` to bring up the command pallette in `VSCode`. Scan for toolkits in CMake, select the appropriate one, then configure the project. Afterwards you should be able to build using the cmake build command.
+Hit `Ctrl+Shift+P` to bring up the command pallette in `VSCode`. Scan for toolkits in CMake, select the appropriate one, then configure the project. Afterwards you should be able to build using the cmake build command. First time build might take a few minutes to download all the dependencies and build, prior to building this application.
