@@ -1,6 +1,13 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
+// CORE
+#include "node.h"
+#include "render_object.h"
+#include "mesh.h"
+#include "gui.h"
+
+// MODULES
 #include "SDL2/SDL.h"
 #include "SDL2/SDL_syswm.h"
 
@@ -9,6 +16,7 @@
 #include "bx/bx.h"
 #include "bx/math.h"
 
+// STDLIB
 #include <memory>
 #include <string>
 #include <vector>
@@ -17,16 +25,12 @@
 
 #include "tiny_gltf.h"
 
-#include "node.h"
-#include "render_object.h"
-#include "mesh.h"
-
 namespace SimpleEngine {
 
 class Renderer {
 
 private:
-
+    // this is consumed by the GUI
     SDL_Window* p_window;
     SDL_SysWMinfo wmi;
 
@@ -48,6 +52,8 @@ private:
 
     int64_t timeOffset;
 
+    GUI& gui;
+
     std::vector<RenderObject*> renderObjects;
     std::vector<Mesh> meshes;
     std::vector<std::unique_ptr<Node>> scenes;
@@ -67,10 +73,10 @@ public:
 
     bool active = true;
 
-    Renderer();
+    Renderer(GUI& gui);
 
     void setup();
-    void renderFrame();
+    void update();
     void cleanup();
 
 };

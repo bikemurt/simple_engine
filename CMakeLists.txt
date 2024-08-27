@@ -7,6 +7,7 @@ find_package(fmt REQUIRED)
 find_package(bgfx CONFIG REQUIRED)
 find_package(SDL2 CONFIG REQUIRED)
 find_package(Stb REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 
 find_path(TINYGLTF_INCLUDE_DIRS "tiny_gltf.h")
 
@@ -16,13 +17,20 @@ set(PRJ_HEADERS
 
 set(PRJ_SOURCES
     src/main.cpp
+
     src/core/renderer.cpp
     src/core/node.cpp
     src/core/render_object.cpp
     src/core/mesh.cpp
+    src/core/gui.cpp
 
     src/utils/fileops.cpp
+    
     src/importers/gltf_loader.cpp
+
+    src/external/bgfx_imgui/imgui_impl_bgfx.cpp
+    #src/external/sdl_imgui/imgui_impl_sdl2.cpp
+
     )
 
 add_executable(${PROJECT_NAME} ${PRJ_HEADERS} ${PRJ_SOURCES})
@@ -38,3 +46,4 @@ target_link_libraries(${PROJECT_NAME}
     $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main>
     $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
 )
+target_link_libraries(${PROJECT_NAME} PRIVATE imgui::imgui)

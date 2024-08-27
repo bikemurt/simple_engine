@@ -1,11 +1,13 @@
 #ifndef RENDER_OBJECT_H
 #define RENDER_OBJECT_H
 
-#include "bgfx/bgfx.h"
-
+// CORE
 #include "node.h"
 #include "mesh.h"
 #include "material.h"
+
+// MODULES
+#include "bgfx/bgfx.h"
 
 namespace SimpleEngine {
 

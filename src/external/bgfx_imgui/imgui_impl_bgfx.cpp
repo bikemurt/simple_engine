@@ -21,7 +21,9 @@
 #include "bx/math.h"
 #include "bx/timer.h"
 
-using SimpleEngine::External;
+namespace SimpleEngine {
+
+namespace External {
 
 // Data
 static uint8_t g_View = 255;
@@ -35,7 +37,7 @@ static bgfx::VertexLayout g_VertexLayout;
 // Note: If text or lines are blurry when integrating ImGui into your engine,
 // in your Render function, try translating your projection matrix by
 // (0.5f,0.5f) or (0.375f,0.375f)
-void ImGui_Implbgfx_RenderDrawLists(ImDrawData* draw_data)
+void ImGui_Implbgfx_RenderDrawLists(::ImDrawData* draw_data)
 {
     // Avoid rendering when minimized, scale coordinates for retina displays
     // (screen coordinates != framebuffer coordinates)
@@ -142,8 +144,8 @@ bool ImGui_Implbgfx_CreateFontsTexture()
 #include "vs_ocornut_imgui.bin.h"
 
 static const bgfx::EmbeddedShader s_embeddedShaders[] = {
-    BGFX_EMBEDDED_SHADER(vs_ocornut_imgui),
-    BGFX_EMBEDDED_SHADER(fs_ocornut_imgui), BGFX_EMBEDDED_SHADER_END()};
+    BGFX_EMBEDDED_SHADER(SimpleEngine::External::vs_ocornut_imgui),
+    BGFX_EMBEDDED_SHADER(SimpleEngine::External::fs_ocornut_imgui), BGFX_EMBEDDED_SHADER_END()};
 
 bool ImGui_Implbgfx_CreateDeviceObjects()
 {
@@ -194,4 +196,8 @@ void ImGui_Implbgfx_NewFrame()
     if (!isValid(g_FontTexture)) {
         ImGui_Implbgfx_CreateDeviceObjects();
     }
+}
+
+}
+
 }

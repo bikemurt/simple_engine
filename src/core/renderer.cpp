@@ -3,17 +3,20 @@
 #include "../utils/debug.h"
 
 #include "renderer.h"
+#include "gui.h"
 #include "../utils/fileops.h"
 #include "../importers/gltf_loader.h"
+#include "imgui_impl_sdl2.h"
 
 // MODULES
 #include "bx/timer.h"
 #include "fmt/format.h"
 #include "tiny_gltf.h"
+#include "imgui.h"
 
 using SimpleEngine::Renderer;
 
-Renderer::Renderer() {
+Renderer::Renderer(GUI& gui) : gui(gui) {
 }
 
 bgfx::ShaderHandle Renderer::createShader(const std::string& shader, const char* name) {
@@ -29,20 +32,51 @@ void Renderer::setupWindow() {
     context.width = 800;
     context.height = 600;
 
-    // TODO: platform specific stuff here
     p_window = SDL_CreateWindow(
         "Simple Engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         context.width, context.height, SDL_WINDOW_SHOWN);
 
+    assert(p_window != nullptr);
+
+    // EMSCRIPTEN DOES NOT LIKE THIS CHUNK HERE - WHY?
+    // TODO, READ THIS: https://wiki.libsdl.org/SDL2/README/emscripten
     SDL_VERSION(&wmi.version);
     SDL_GetWindowWMInfo(p_window, &wmi);
+    assert(SDL_GetWindowWMInfo(p_window, &wmi));
+
+    bgfx::renderFrame();
+    //
+
+    bgfx::PlatformData platformData;
+
+#if BX_PLATFORM_WINDOWS
+    platformData.ndt = nullptr;
+    platformData.nwh = wmi.info.win.window;
+#elif BX_PLATFORM_OSX
+    platformData.nwh = wmi.info.cocoa.window;
+#elif BX_PLATFORM_LINUX
+    platformData.ndt = wmi.info.x11.display;
+    platformData.nwh = (void*)(uintptr_t)wmi.info.x11.window;
+#elif BX_PLATFORM_EMSCRIPTEN
+    platformData.nwh = (void*)"#canvas";
+#endif
+
+    bgfx::Init init;
+    init.type = bgfx::RendererType::Count;
+    init.resolution.width = context.width;
+    init.resolution.height = context.height;
+    init.resolution.reset = BGFX_RESET_VSYNC;
+    init.platformData = platformData;
+
+    bgfx::init(init);
+
 }
 
 void Renderer::handleEvents() {
     SDL_Event event;
 
     if (SDL_PollEvent(&event) > 0) {
-
+        ImGui_ImplSDL2_ProcessEvent(&event);
         switch (event.type) {
             case SDL_KEYDOWN:
                 switch(event.key.keysym.sym) {              
@@ -104,23 +138,10 @@ void Renderer::setContextVertexLayout(const VertexLayout& vertexLayout) {
 void Renderer::setup() {
     setupWindow();
 
-    bgfx::renderFrame();
-
-    bgfx::PlatformData platformData;
-    platformData.ndt = nullptr;
-    platformData.nwh = wmi.info.win.window;
-
-    bgfx::Init init;
-    init.type = bgfx::RendererType::Count;
-    init.resolution.width = context.width;
-    init.resolution.height = context.height;
-    init.resolution.reset = BGFX_RESET_VSYNC;
-    init.platformData = platformData;
-
-    bgfx::init(init);
-
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x443355FF, 1.0f, 0);
     bgfx::setViewRect(0, 0, 0, context.width, context.height);
+
+    gui.setup(p_window);
 
     VertexLayout vertexLayout;
 
@@ -167,26 +188,32 @@ void Renderer::setup() {
     timeOffset = bx::getHPCounter();
 }
 
-void Renderer::renderFrame() {
+void Renderer::update() {
 
     handleEvents();
     
-    int mouseX, mouseY;
-    const int buttons = SDL_GetMouseState(&mouseX, &mouseY);
-    if ((buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) {
-        int delta_x = mouseX - context.prevMouseX;
-        int delta_y = mouseY - context.prevMouseY;
-        context.camYaw += float(delta_x) * context.rotScale;
-        context.camPitch += float(delta_y) * context.rotScale;
+    gui.update();
+
+    if (!ImGui::GetIO().WantCaptureMouse) {
+        int mouseX, mouseY;
+        const int buttons = SDL_GetMouseState(&mouseX, &mouseY);
+        if ((buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0) {
+            int delta_x = mouseX - context.prevMouseX;
+            int delta_y = mouseY - context.prevMouseY;
+            context.camYaw += float(delta_x) * context.rotScale;
+            context.camPitch += float(delta_y) * context.rotScale;
+        }
+        context.prevMouseX = mouseX;
+        context.prevMouseY = mouseY;
     }
-    context.prevMouseX = mouseX;
-    context.prevMouseY = mouseY;
 
     float time = (float)((bx::getHPCounter() - timeOffset) / double(bx::getHPFrequency()));
 
+    // TESTING
     double a[3] = {0, 0.2 * bx::sin(10.0 * time), 0};
     scenes[3]->setTranslation(a, 0b010);
     scenes[3]->updateLocalTransform();
+    // ---
 
     float camRotation[16];
     bx::mtxRotateXYZ(camRotation, context.camPitch, context.camYaw, 0.0f);
@@ -251,6 +278,10 @@ void Renderer::cleanup() {
 
     bgfx::destroy(context.programHandle);
 
+    gui.cleanup();
+
     bgfx::shutdown();
 
+    SDL_DestroyWindow(p_window);
+    SDL_Quit();
 }
