@@ -21,6 +21,10 @@
 #include "bx/math.h"
 #include "bx/timer.h"
 
+// embedded shaders
+#include "fs_ocornut_imgui.bin.h"
+#include "vs_ocornut_imgui.bin.h"
+
 namespace SimpleEngine {
 
 namespace External {
@@ -140,12 +144,9 @@ bool ImGui_Implbgfx_CreateFontsTexture()
     return true;
 }
 
-#include "fs_ocornut_imgui.bin.h"
-#include "vs_ocornut_imgui.bin.h"
-
 static const bgfx::EmbeddedShader s_embeddedShaders[] = {
-    BGFX_EMBEDDED_SHADER(SimpleEngine::External::vs_ocornut_imgui),
-    BGFX_EMBEDDED_SHADER(SimpleEngine::External::fs_ocornut_imgui), BGFX_EMBEDDED_SHADER_END()};
+    BGFX_EMBEDDED_SHADER(vs_ocornut_imgui),
+    BGFX_EMBEDDED_SHADER(fs_ocornut_imgui), BGFX_EMBEDDED_SHADER_END()};
 
 bool ImGui_Implbgfx_CreateDeviceObjects()
 {
