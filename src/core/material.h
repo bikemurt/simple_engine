@@ -8,6 +8,8 @@
 
 #include "texture.h"
 
+namespace SimpleEngine {
+    
 class Material {
 
 public:
@@ -25,5 +27,7 @@ public:
     std::vector<Uniform> uniforms;
 
 };
+
+}
 
 #endif

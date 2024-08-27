@@ -1,4 +1,4 @@
-// SIMPLE_ENGINE
+// CORE
 #define ENABLE_DEBUG
 #include "../utils/debug.h"
 
@@ -13,6 +13,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "tiny_gltf.h"
+
+using SimpleEngine::GltfLoader;
 
 GltfLoader::GltfLoader(std::string fileName, const VertexLayout& vertexLayout, const std::vector<Mesh>& meshes) :
     fileName(fileName), vertexLayout(vertexLayout), meshes(meshes) {

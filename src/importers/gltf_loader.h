@@ -12,6 +12,8 @@
 #include "../utils/fileops.h"
 #include "tiny_gltf.h"
 
+namespace SimpleEngine {
+
 class GltfLoader {
 
 private:
@@ -46,5 +48,7 @@ public:
     void loadScenes(std::vector<std::unique_ptr<Node>>& scenes);
 
 };
+
+}
 
 #endif

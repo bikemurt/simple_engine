@@ -1,13 +1,12 @@
-// core includes
+// CORE
 #define ENABLE_DEBUG
 #include "../utils/debug.h"
 
 #include "renderer.h"
 #include "../utils/fileops.h"
-
 #include "../importers/gltf_loader.h"
 
-// module includes
+// MODULES
 #include "bx/timer.h"
 #include "fmt/format.h"
 #include "tiny_gltf.h"

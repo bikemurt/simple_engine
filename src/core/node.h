@@ -4,6 +4,8 @@
 #include <memory>
 #include <vector>
 
+namespace SimpleEngine {
+
 class Node {
 private:
     bool dirty = false;
@@ -39,5 +41,7 @@ public:
 
     virtual ~Node() = default;
 };
+
+}
 
 #endif

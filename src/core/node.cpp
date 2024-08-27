@@ -1,13 +1,16 @@
-// core includes
+// CORE
 #define ENABLE_DEBUG
 #include "../utils/debug.h"
 
 #include "node.h"
 
+// MODULES
 #include "bgfx/bgfx.h"
 #include "bgfx/platform.h"
 #include "bx/bx.h"
 #include "bx/math.h"
+
+using SimpleEngine::Node;
 
 Node::Node() {
     for (int i = 0; i < 3; i++) {

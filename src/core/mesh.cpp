@@ -1,4 +1,4 @@
-// SIMPLE_ENGINE
+// CORE
 #define ENABLE_DEBUG
 #include "../utils/debug.h"
 
@@ -10,6 +10,8 @@
 // STDLIB
 #include <filesystem>
 #include <fstream>
+
+using SimpleEngine::Mesh;
 
 const std::string Mesh::importSavePath = "C:\\Projects\\CppTesting\\simple_engine\\imports\\meshes\\";
 

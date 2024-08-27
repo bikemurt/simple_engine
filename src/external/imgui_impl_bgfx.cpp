@@ -21,6 +21,8 @@
 #include "bx/math.h"
 #include "bx/timer.h"
 
+using SimpleEngine::External;
+
 // Data
 static uint8_t g_View = 255;
 static bgfx::TextureHandle g_FontTexture = BGFX_INVALID_HANDLE;

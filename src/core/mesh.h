@@ -5,6 +5,8 @@
 #include <vector>
 #include <fstream>
 
+namespace SimpleEngine {
+
 class Mesh {
 
 public:
@@ -24,5 +26,7 @@ public:
     void loadFromImportCache();
 
 };
+
+}
 
 #endif

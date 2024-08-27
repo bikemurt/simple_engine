@@ -1,9 +1,13 @@
-// core includes
+// CORE
 #define ENABLE_DEBUG
 #include "../utils/debug.h"
 
 #include "render_object.h"
+
+// MODULES
 #include "tiny_gltf.h"
+
+using SimpleEngine::RenderObject;
 
 RenderObject::RenderObject(const Mesh& mesh, const VertexLayout& vertexLayout) :
     mesh(mesh), vertexLayout(vertexLayout) {

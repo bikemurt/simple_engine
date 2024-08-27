@@ -7,6 +7,8 @@
 #include "mesh.h"
 #include "material.h"
 
+namespace SimpleEngine {
+
 struct VertexLayoutItem {
     std::string attribute;
     bgfx::Attrib::Enum bgfxAttrib;
@@ -44,5 +46,7 @@ public:
     static void vertexLayoutHelper(VertexLayout& layout, const std::vector<std::string>& attributes);
     
 };
+
+}
 
 #endif
