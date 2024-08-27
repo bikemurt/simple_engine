@@ -21,6 +21,8 @@
 #include "render_object.h"
 #include "mesh.h"
 
+namespace SimpleEngine {
+
 class Renderer {
 
 private:
@@ -72,5 +74,8 @@ public:
     void cleanup();
 
 };
+
+}
+
 
 #endif

@@ -12,6 +12,8 @@
 #include "fmt/format.h"
 #include "tiny_gltf.h"
 
+using SimpleEngine::Renderer;
+
 Renderer::Renderer() {
 }
 
