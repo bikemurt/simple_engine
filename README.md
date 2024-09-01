@@ -10,8 +10,6 @@ A simple 3D game engine with a focus on integrating high quality, high visibilit
 - Keep code organized, lightweight, minimal
 - An editor that is built from the engine itself
 
-_Note: right now it is NOT cross-platform (I am developing on Windows), but I intend to develop out the macros and code to facilitate that._
-
 ## Third party libraries (links are to `vcpkg`, check dependencies there):
 - 3D renderer - [bgfx](https://vcpkg.io/en/package/bgfx) `in process`
 - Model loading - [tinyGLTF](https://vcpkg.io/en/package/tinygltf) `in process`
