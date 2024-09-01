@@ -1,6 +1,6 @@
 # SimpleEngine
 
-A simple 3D game engine with a focus on integrating high quality, high visibility, open-source C++ libraries.
+A simple 3D game engine with a focus on integrating high quality, high visibility, cross-platform, open-source C++ libraries.
 
 ![image](https://github.com/bikemurt/simple_engine/assets/23486102/1d12a829-1043-4484-9a29-d6e47774470e)
 
