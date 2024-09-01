@@ -12,6 +12,11 @@ int main(int argc, char **argv) {
 
 	// the plan is to do dependency injection for most things into the renderer
 	Renderer renderer(gui);
+	
+	// mutual coupling seems horrendous
+	// better design pattern probably needed
+	gui.p_renderer = &renderer;
+	
 	renderer.setup();
 	
 	fmt::println("loop starting");

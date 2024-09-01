@@ -19,6 +19,9 @@ class GltfLoader {
 private:
 
     const VertexLayout& vertexLayout;
+
+    // this is the array of meshes which we will transfer ownership
+    // of the mesh data into
     const std::vector<Mesh>& meshes;
 
     std::string fileName;

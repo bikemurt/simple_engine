@@ -6,13 +6,13 @@
 #include "gui.h"
 #include "../utils/fileops.h"
 #include "../importers/gltf_loader.h"
-#include "imgui_impl_sdl2.h"
 
 // MODULES
 #include "bx/timer.h"
 #include "fmt/format.h"
 #include "tiny_gltf.h"
 #include "imgui.h"
+#include "imgui_impl_sdl2.h"
 
 using SimpleEngine::Renderer;
 
@@ -45,7 +45,6 @@ void Renderer::setupWindow() {
     assert(SDL_GetWindowWMInfo(p_window, &wmi));
 
     bgfx::renderFrame();
-    //
 
     bgfx::PlatformData platformData;
 
@@ -69,6 +68,8 @@ void Renderer::setupWindow() {
     init.platformData = platformData;
 
     bgfx::init(init);
+    
+    bgfx::setDebug(BGFX_DEBUG_TEXT);
 
 }
 
@@ -101,30 +102,27 @@ void Renderer::handleEvents() {
     }
 }
 
-void Renderer::cleanupWindow() {
-    SDL_DestroyWindow(p_window);
-    SDL_Quit();
-}
+void Renderer::findNodes(const std::unique_ptr<Node>& node) {
 
-void Renderer::findRenderObjects(const std::unique_ptr<Node>& node) {
-
-    // if the node is a RenderObject, that add it to our list of render objects (pointers)    
+    // only perform the dynamic_cast in the setup function
+    // not each frame
     if (RenderObject* renderObject = dynamic_cast<RenderObject*>(node.get())) {
-        renderObjects.push_back(renderObject);
+        renderObjectsFlattened.push_back(renderObject);
     }
+    nodesFlattened.push_back(node.get());
 
     for (const std::unique_ptr<Node>& child : node->children) {
-        findRenderObjects(child);
+        findNodes(child);
     }
 }
 
-void Renderer::processScenes() {
+void Renderer::flattenSceneGraph() {
     for (const std::unique_ptr<Node>& scene : scenes) {
-        findRenderObjects(scene);
+        findNodes(scene);
     }
 }
 
-void Renderer::setContextVertexLayout(const VertexLayout& vertexLayout) {
+void Renderer::setContextVertexLayout() {
     context.layout.begin();
     for (int i = 0; i < vertexLayout.items.size(); i++) {
         const VertexLayoutItem& item = vertexLayout.items[i];
@@ -141,14 +139,14 @@ void Renderer::setup() {
     bgfx::setViewClear(0, BGFX_CLEAR_COLOR | BGFX_CLEAR_DEPTH, 0x443355FF, 1.0f, 0);
     bgfx::setViewRect(0, 0, 0, context.width, context.height);
 
-    gui.setup(p_window);
-
-    VertexLayout vertexLayout;
-
     // the big question is WHERE is this layout dictated from?
     // needs alignment between the shader and the geometry
     std::vector<std::string> attributes = { "POSITION", "COLOR_0", "NORMAL", "TEXCOORD_0", "TANGENT" };
     RenderObject::vertexLayoutHelper(vertexLayout, attributes);
+
+    setContextVertexLayout();
+
+    gui.setup(p_window);
 
     // PIPELINE TESTING
     GltfLoader g("../../assets/gltf/cube_2.gltf", vertexLayout, meshes);
@@ -157,19 +155,17 @@ void Renderer::setup() {
     g.loadMeshes(meshes);
     g.loadScenes(scenes);
 
-    // next: parse the scene graph - right now we are only extracting the RenderObjects and submitting them to the render queue
-    processScenes();
-    setContextVertexLayout(vertexLayout);
+    // flatten the scene graph
+    flattenSceneGraph();
 
-    // FROM HERE FORWARD SHOULD NOT CHANGE TOO MUCH
-    for (int i = 0; i < renderObjects.size(); i++) {
-        renderObjects[i]->vertexBufferHandle = bgfx::createVertexBuffer(
-            bgfx::makeRef(&renderObjects[i]->mesh.vertexData[0], renderObjects[i]->mesh.vertexData.size() * sizeof(uint8_t)),
+    for (RenderObject* renderObject : renderObjectsFlattened) {
+        renderObject->vertexBufferHandle = bgfx::createVertexBuffer(
+            bgfx::makeRef(&renderObject->mesh.vertexData[0], renderObject->mesh.vertexData.size() * sizeof(uint8_t)),
             context.layout
             );
         
-        renderObjects[i]->indexBufferHandle = bgfx::createIndexBuffer(
-            bgfx::makeRef(&renderObjects[i]->mesh.indexData[0], renderObjects[i]->mesh.indexData.size() * sizeof(uint16_t))
+        renderObject->indexBufferHandle = bgfx::createIndexBuffer(
+            bgfx::makeRef(&renderObject->mesh.indexData[0], renderObject->mesh.indexData.size() * sizeof(uint16_t))
             );
     }
 
@@ -185,7 +181,17 @@ void Renderer::setup() {
     // third argument being true destroys shaders
     context.programHandle = bgfx::createProgram(vShader, fShader, true);
 
-    timeOffset = bx::getHPCounter();
+    renderAttribs.timeOffset = bx::getHPCounter();
+    renderAttribs.stats = bgfx::getStats();
+}
+
+void Renderer::debugRender() {
+    bgfx::dbgTextClear();
+
+    renderAttribs.toMsCpu = 1000.0/renderAttribs.stats->cpuTimerFreq;
+    bgfx::dbgTextPrintf(0, 2, 0x0f, "cpu time frame %0.3f"
+        , double(renderAttribs.stats->cpuTimeFrame)*renderAttribs.toMsCpu
+        );
 }
 
 void Renderer::update() {
@@ -207,10 +213,10 @@ void Renderer::update() {
         context.prevMouseY = mouseY;
     }
 
-    float time = (float)((bx::getHPCounter() - timeOffset) / double(bx::getHPFrequency()));
-
+    renderAttribs.time = (float)((bx::getHPCounter() - renderAttribs.timeOffset) / double(bx::getHPFrequency()));
+    
     // TESTING
-    double a[3] = {0, 0.2 * bx::sin(10.0 * time), 0};
+    double a[3] = {0, 0.2 * bx::sin(10.0 * renderAttribs.time), 0};
     scenes[3]->setTranslation(a, 0b010);
     scenes[3]->updateLocalTransform();
     // ---
@@ -236,19 +242,21 @@ void Renderer::update() {
 
     bgfx::touch(0);
 
-    // problem... render order matters
-    // can we guarantee that parent nodes are parsed first?
-    // assume yes
+    // clean transform pass
+    for (Node* node : nodesFlattened) {
+        node->cleanTransforms();
+    }
 
-    
+    // render pass
+    for (RenderObject* renderObject : renderObjectsFlattened) {
 
-    for (int i = 0; i < renderObjects.size(); i++) {
-        RenderObject* renderObject = renderObjects[i];
+        // check that the render object's vertex layout address
+        // matches the renderer's vertex layout
+        if (&renderObject->vertexLayout != &vertexLayout) continue;
 
         bgfx::setVertexBuffer(0, renderObject->vertexBufferHandle);
         bgfx::setIndexBuffer(renderObject->indexBufferHandle);
 
-        renderObject->cleanTransforms();
         bgfx::setTransform(renderObject->globalTransform);
 
         uint64_t state = 0
@@ -267,13 +275,15 @@ void Renderer::update() {
         bgfx::submit(0, context.programHandle);
     }
 
+    //debugRender();
+
     bgfx::frame();
 }
 
 void Renderer::cleanup() {
-    for (int i = 0; i < renderObjects.size(); i++) {
-        bgfx::destroy(renderObjects[i]->vertexBufferHandle);
-        bgfx::destroy(renderObjects[i]->indexBufferHandle);
+    for (RenderObject* renderObject : renderObjectsFlattened) {
+        bgfx::destroy(renderObject->vertexBufferHandle);
+        bgfx::destroy(renderObject->indexBufferHandle);
     }
 
     bgfx::destroy(context.programHandle);

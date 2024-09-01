@@ -50,24 +50,38 @@ private:
 
     } context;
 
-    int64_t timeOffset;
+    struct RenderAttribs {
+        int64_t timeOffset;
+        const bgfx::Stats* stats;
+        float time;
+        double toMsCpu;
+    } renderAttribs;
 
+    VertexLayout vertexLayout;
+
+    // gui is injected because the initialization order matters
+    // and is buried in the renderer setup/update functions
     GUI& gui;
 
-    std::vector<RenderObject*> renderObjects;
+    // flat render structure
+    std::vector<Node*> nodesFlattened;
+    std::vector<RenderObject*> renderObjectsFlattened;
+
+    // actual memory used meshes, nodes
     std::vector<Mesh> meshes;
     std::vector<std::unique_ptr<Node>> scenes;
 
-    void setContextVertexLayout(const VertexLayout& vertexLayout);
+    void setContextVertexLayout();
 
     void setupWindow();
     void handleEvents();
-    void cleanupWindow();
         
     bgfx::ShaderHandle createShader(const std::string& shader, const char* name);
 
-    void processScenes();
-    void findRenderObjects(const std::unique_ptr<Node>& node);
+    void flattenSceneGraph();
+    void findNodes(const std::unique_ptr<Node>& node);
+
+    void debugRender();
 
 public:
 

@@ -30,9 +30,6 @@ struct VertexLayout {
 
 class RenderObject : public Node {
 private:
-
-    const VertexLayout& vertexLayout;
-
     static void vertexLayoutItemHelper(VertexLayoutItem& item, const std::string& attribute);
     static bgfx::Attrib::Enum getBGFXAttribute(const std::string& attribute);
     static bgfx::AttribType::Enum getBGFXAttribType(int componentType);
@@ -41,6 +38,8 @@ public:
     bgfx::VertexBufferHandle vertexBufferHandle;
     bgfx::IndexBufferHandle indexBufferHandle;
 
+    const VertexLayout& vertexLayout;
+    
     const Mesh& mesh;
     //const Material& material;
 
