@@ -16,8 +16,8 @@
 
 using SimpleEngine::GltfLoader;
 
-GltfLoader::GltfLoader(std::string fileName, const VertexLayout& vertexLayout, const std::vector<Mesh>& meshes) :
-    fileName(fileName), vertexLayout(vertexLayout), meshes(meshes) {
+GltfLoader::GltfLoader(std::string fileName, Renderer* p_renderer) :
+    fileName(fileName), p_renderer(p_renderer) {
 	std::string err;
 	std::string warn;
 
@@ -29,9 +29,14 @@ GltfLoader::GltfLoader(std::string fileName, const VertexLayout& vertexLayout, c
 	} else {
 		ret = loader.LoadASCIIFromFile(&model, &err, &warn, fileName.c_str());
 	}
+    
+    // order dependent - this actually loads the meshes and nodes into the renderer
+    // move semantics are used
+    loadMeshes();
+    loadScenes();
 }
 
-void GltfLoader::loadMeshes(std::vector<Mesh>& _meshes) {
+void GltfLoader::loadMeshes() {
 	for (size_t i = 0; i < model.meshes.size(); i++) {
 		const tinygltf::Mesh& mesh = model.meshes[i];
 
@@ -52,7 +57,9 @@ void GltfLoader::loadMeshes(std::vector<Mesh>& _meshes) {
                     //renderMesh.saveToImportCache();
                 }
 
-                _meshes.push_back(std::move(renderMesh));
+                size_t nextIndex = p_renderer->meshes.size();
+                globalMeshMap.push_back(nextIndex);
+                p_renderer->meshes.push_back(std::move(renderMesh));
 			}
 		}
 
@@ -61,12 +68,14 @@ void GltfLoader::loadMeshes(std::vector<Mesh>& _meshes) {
 }
 
 void GltfLoader::processNode(const tinygltf::Node& gltfNode, std::unique_ptr<Node>& node, Node* parentNode) {
-
     if (gltfNode.mesh >= 0) {
-        node = std::make_unique<RenderObject>(meshes[gltfNode.mesh], vertexLayout);
+        size_t globalMeshIndex = globalMeshMap[gltfNode.mesh];
+        node = std::make_unique<RenderObject>(p_renderer->meshes[globalMeshIndex], p_renderer->vertexLayout);
     } else {
         node = std::make_unique<Node>();
     }
+
+    node->name = gltfNode.name;
     node->parent = parentNode;
 
     if (!gltfNode.rotation.empty()) {
@@ -92,14 +101,19 @@ void GltfLoader::processNode(const tinygltf::Node& gltfNode, std::unique_ptr<Nod
         node->children.push_back(std::move(childNode));
     }
 }
-void GltfLoader::loadScenes(std::vector<std::unique_ptr<Node>>& scenes) {
+void GltfLoader::loadScenes() {
     for (const tinygltf::Scene& scene : model.scenes) {
+        std::unique_ptr<Node> rootNode = std::make_unique<Node>();
+        (rootNode.get())->name = scene.name;
         for (size_t i = 0; i < scene.nodes.size(); i++) {
+            // TODO code duplication here with the recursive function
+            // take another look eventually
             const tinygltf::Node& gltfNode = model.nodes[scene.nodes[i]];
-            std::unique_ptr<Node> rootNode;
-            processNode(gltfNode, rootNode, nullptr);
-            scenes.push_back(std::move(rootNode));
+            std::unique_ptr<Node> sceneNode;
+            processNode(gltfNode, sceneNode, rootNode.get());
+            rootNode.get()->children.push_back(std::move(sceneNode));
         }
+        p_renderer->scenes.push_back(std::move(rootNode));
     }
 }
 
@@ -141,6 +155,8 @@ void GltfLoader::processPrimitive(const tinygltf::Primitive& primitive, Mesh& me
     
     // assert that the vertex layout is correct and add all buffers
     std::vector<GLTFBufferData> accessorBuffers;
+
+    const VertexLayout& vertexLayout = p_renderer->vertexLayout;
 
     // validate vertex layout and populate accessor buffers (for later interleaving data)
     int vertexCount = -1;

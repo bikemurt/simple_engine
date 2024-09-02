@@ -84,12 +84,6 @@ void Renderer::handleEvents() {
                     case SDLK_ESCAPE:
                         active = false;
                         break;
-
-                    case SDLK_k:
-                        double a[3] = {0, 1.0, 0};
-                        scenes[0]->setTranslation(a, 0b010);
-                        scenes[0]->updateLocalTransform();
-                        break;
                 }
 
             case SDL_WINDOWEVENT:
@@ -117,6 +111,14 @@ void Renderer::findNodes(const std::unique_ptr<Node>& node) {
 }
 
 void Renderer::flattenSceneGraph() {
+    
+    // this is the dumb brute force way
+    // basically every time we add a model to the scene tree
+    // we clear the flattened vectors and repopulate them
+    // it's just pointers, but still
+    renderObjectsFlattened.clear();
+    nodesFlattened.clear();
+    
     for (const std::unique_ptr<Node>& scene : scenes) {
         findNodes(scene);
     }
@@ -131,6 +133,31 @@ void Renderer::setContextVertexLayout() {
         context.layout.add(item.bgfxAttrib, item.type, item.bgfxAttribType, normalized);
     }
     context.layout.end();
+}
+
+void Renderer::assignBuffers() {
+    // this is not super optimized
+    for (RenderObject* renderObject : renderObjectsFlattened) {
+
+        // a single bool here is probably inefficient, right?
+        if (!renderObject->buffersInitialized) {
+            renderObject->vertexBufferHandle = bgfx::createVertexBuffer(
+                bgfx::makeRef(&renderObject->mesh.vertexData[0], renderObject->mesh.vertexData.size() * sizeof(uint8_t)),
+                context.layout
+                );
+            
+            renderObject->indexBufferHandle = bgfx::createIndexBuffer(
+                bgfx::makeRef(&renderObject->mesh.indexData[0], renderObject->mesh.indexData.size() * sizeof(uint16_t))
+                );
+            renderObject->buffersInitialized = true;
+        }
+    }
+}
+
+// this method might be used externally - inefficeint right now
+void Renderer::postImportAddToSceneTree() {
+    flattenSceneGraph();
+    assignBuffers();
 }
 
 void Renderer::setup() {
@@ -149,25 +176,9 @@ void Renderer::setup() {
     gui.setup(p_window);
 
     // PIPELINE TESTING
-    GltfLoader g("../../assets/gltf/cube_2.gltf", vertexLayout, meshes);
-    
-    // ORDER DEPENDENT...
-    g.loadMeshes(meshes);
-    g.loadScenes(scenes);
-
-    // flatten the scene graph
-    flattenSceneGraph();
-
-    for (RenderObject* renderObject : renderObjectsFlattened) {
-        renderObject->vertexBufferHandle = bgfx::createVertexBuffer(
-            bgfx::makeRef(&renderObject->mesh.vertexData[0], renderObject->mesh.vertexData.size() * sizeof(uint8_t)),
-            context.layout
-            );
-        
-        renderObject->indexBufferHandle = bgfx::createIndexBuffer(
-            bgfx::makeRef(&renderObject->mesh.indexData[0], renderObject->mesh.indexData.size() * sizeof(uint16_t))
-            );
-    }
+    GltfLoader g("../../assets/gltf/cube_2.gltf", this);
+    postImportAddToSceneTree();
+    // ---
 
     std::string vShaderData;
     assert(FileOps::getFileContentsBinary("../shader/b-vertex.bin", vShaderData));
@@ -217,8 +228,8 @@ void Renderer::update() {
     
     // TESTING
     double a[3] = {0, 0.2 * bx::sin(10.0 * renderAttribs.time), 0};
-    scenes[3]->setTranslation(a, 0b010);
-    scenes[3]->updateLocalTransform();
+    scenes[0]->setTranslation(a, 0b010);
+    scenes[0]->updateLocalTransform();
     // ---
 
     float camRotation[16];
@@ -252,6 +263,8 @@ void Renderer::update() {
 
         // check that the render object's vertex layout address
         // matches the renderer's vertex layout
+
+        // technically redundant, but there may come a day when this is needed
         if (&renderObject->vertexLayout != &vertexLayout) continue;
 
         bgfx::setVertexBuffer(0, renderObject->vertexBufferHandle);

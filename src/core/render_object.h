@@ -37,6 +37,8 @@ private:
 public:
     bgfx::VertexBufferHandle vertexBufferHandle;
     bgfx::IndexBufferHandle indexBufferHandle;
+    
+    bool buffersInitialized = false;
 
     const VertexLayout& vertexLayout;
     

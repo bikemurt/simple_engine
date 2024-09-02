@@ -57,8 +57,6 @@ private:
         double toMsCpu;
     } renderAttribs;
 
-    VertexLayout vertexLayout;
-
     // gui is injected because the initialization order matters
     // and is buried in the renderer setup/update functions
     GUI& gui;
@@ -66,10 +64,6 @@ private:
     // flat render structure
     std::vector<Node*> nodesFlattened;
     std::vector<RenderObject*> renderObjectsFlattened;
-
-    // actual memory used meshes, nodes
-    std::vector<Mesh> meshes;
-    std::vector<std::unique_ptr<Node>> scenes;
 
     void setContextVertexLayout();
 
@@ -82,12 +76,20 @@ private:
     void findNodes(const std::unique_ptr<Node>& node);
 
     void debugRender();
+    void assignBuffers();
 
 public:
+
+    // these are public now both for the gltf_loader and GUI
+    VertexLayout vertexLayout;
+    std::vector<Mesh> meshes;
+    std::vector<std::unique_ptr<Node>> scenes;
 
     bool active = true;
 
     Renderer(GUI& gui);
+
+    void postImportAddToSceneTree();
 
     void setup();
     void update();

@@ -1,6 +1,7 @@
 #ifndef NODE_H
 #define NODE_H
 
+#include <string>
 #include <memory>
 #include <vector>
 
@@ -22,6 +23,8 @@ private:
     void cleanTransformsProcess(Node* node);
 
 public:
+
+    std::string name;
 
     float globalTransform[16];
     float localTransform[16];

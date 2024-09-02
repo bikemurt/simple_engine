@@ -22,6 +22,8 @@ private:
 
 public:
     GUI();
+
+    // how do we ensure this is set?
     Renderer* p_renderer;
 
     void setup(SDL_Window* p_window);

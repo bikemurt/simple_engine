@@ -1,6 +1,7 @@
 // CORE
 #include "gui.h"
 #include "renderer.h"
+#include "../importers/gltf_loader.h"
 
 // MODULES
 #include "imgui.h"
@@ -35,7 +36,7 @@ void GUI::setup(SDL_Window* p_window) {
 
 void GUI::fileDialog(std::string& outPathStr, nfdresult_t& result) {
     nfdu8char_t* outPath;
-    nfdu8filteritem_t filters[2] = { { "Source code", "c,cpp,cc" }, { "Headers", "h,hpp" } };
+    nfdu8filteritem_t filters[2] = { { "GLTF File", "gltf" }, { "", "" } };
     nfdopendialogu8args_t args = {0};
     args.filterList = filters;
     args.filterCount = 2;
@@ -74,12 +75,11 @@ void GUI::update() {
         std::string path;
         fileDialog(path, result);
         if (result == NFD_OKAY) {
-            
+            GltfLoader g(path, p_renderer);
+            p_renderer->postImportAddToSceneTree();
         }
     }
     
-    //ImGui::ShowDemoWindow(); // your drawing here
-
     ImGui::Render();
     ImGui_Implbgfx_RenderDrawLists(ImGui::GetDrawData());
 
