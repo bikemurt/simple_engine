@@ -17,6 +17,7 @@
 using SimpleEngine::Renderer;
 
 Renderer::Renderer(GUI& gui) : gui(gui) {
+    gui.p_renderer = this;
 }
 
 // SETUP/UPDATE/CLEANUP
@@ -38,7 +39,7 @@ void Renderer::setup() {
 
     // PIPELINE TESTING
     GltfLoader g("../../assets/gltf/cube_2.gltf", this);
-    postImportAddToSceneTree();
+    postImportProcess();
     // ---
 
     std::string vShaderData;
@@ -276,9 +277,13 @@ bgfx::ShaderHandle Renderer::createShader(const std::string& shader, const char*
 // MODEL LOADING
 
 // this method might be used externally - inefficient right now
-void Renderer::postImportAddToSceneTree() {
+void Renderer::postImportProcess() {
     flattenSceneGraph();
     assignBuffers();
+    sceneTreeChangedCounter++;
+
+    // 65535 is reserved to check bad values against
+    if (sceneTreeChangedCounter >= 65534) sceneTreeChangedCounter = 0;
 }
 
 void Renderer::findNodes(const std::unique_ptr<Node>& node) {

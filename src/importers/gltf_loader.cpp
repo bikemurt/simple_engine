@@ -54,6 +54,7 @@ void GltfLoader::loadMeshes() {
                     renderMesh.loadFromImportCache();
                 } else {
                     processPrimitive(primitive, renderMesh);
+                    // TODO - REIMPLEMENT MESH IMPORT CACHE
                     //renderMesh.saveToImportCache();
                 }
 
@@ -104,14 +105,14 @@ void GltfLoader::processNode(const tinygltf::Node& gltfNode, std::unique_ptr<Nod
 void GltfLoader::loadScenes() {
     for (const tinygltf::Scene& scene : model.scenes) {
         std::unique_ptr<Node> rootNode = std::make_unique<Node>();
-        (rootNode.get())->name = scene.name;
+        rootNode->name = scene.name;
         for (size_t i = 0; i < scene.nodes.size(); i++) {
             // TODO code duplication here with the recursive function
             // take another look eventually
             const tinygltf::Node& gltfNode = model.nodes[scene.nodes[i]];
             std::unique_ptr<Node> sceneNode;
             processNode(gltfNode, sceneNode, rootNode.get());
-            rootNode.get()->children.push_back(std::move(sceneNode));
+            rootNode->children.push_back(std::move(sceneNode));
         }
         p_renderer->scenes.push_back(std::move(rootNode));
     }

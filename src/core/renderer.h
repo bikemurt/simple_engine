@@ -73,6 +73,8 @@ private:
     std::vector<Node*> nodesFlattened;
     std::vector<RenderObject*> renderObjectsFlattened;
 
+    uint16_t sceneTreeChangedCounter = 0;
+
     void setContextVertexLayout();
 
     void setupWindow();
@@ -86,7 +88,7 @@ private:
     void debugRender();
     void assignBuffers();
 
-    void postImportAddToSceneTree();
+    void postImportProcess();
     void renderPass();
     void cameraViewUpdate();
 
