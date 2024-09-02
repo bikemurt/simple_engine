@@ -29,6 +29,9 @@ namespace SimpleEngine {
 
 class Renderer {
 
+friend class GltfLoader;
+friend class GUI;
+
 private:
     // this is consumed by the GUI
     SDL_Window* p_window;
@@ -57,6 +60,11 @@ private:
         double toMsCpu;
     } renderAttribs;
 
+    // these are public now both for the gltf_loader and GUI
+    VertexLayout vertexLayout;
+    std::vector<Mesh> meshes;
+    std::vector<std::unique_ptr<Node>> scenes;
+
     // gui is injected because the initialization order matters
     // and is buried in the renderer setup/update functions
     GUI& gui;
@@ -69,7 +77,7 @@ private:
 
     void setupWindow();
     void handleEvents();
-        
+    
     bgfx::ShaderHandle createShader(const std::string& shader, const char* name);
 
     void flattenSceneGraph();
@@ -78,18 +86,15 @@ private:
     void debugRender();
     void assignBuffers();
 
-public:
+    void postImportAddToSceneTree();
+    void renderPass();
+    void cameraViewUpdate();
 
-    // these are public now both for the gltf_loader and GUI
-    VertexLayout vertexLayout;
-    std::vector<Mesh> meshes;
-    std::vector<std::unique_ptr<Node>> scenes;
+public:
 
     bool active = true;
 
     Renderer(GUI& gui);
-
-    void postImportAddToSceneTree();
 
     void setup();
     void update();

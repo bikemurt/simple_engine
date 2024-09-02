@@ -2,6 +2,7 @@
 #include "gui.h"
 #include "renderer.h"
 #include "../importers/gltf_loader.h"
+#include "../utils/fileops.h"
 
 // MODULES
 #include "imgui.h"
@@ -17,13 +18,15 @@ GUI::GUI() {
 
 }
 
-void GUI::setup(SDL_Window* p_window) {
+void GUI::setup() {
+    assert(p_renderer != nullptr);
+
     ImGui::CreateContext();
     ImGui_Implbgfx_Init(255);
 
     // I don't really have full support for emscripten yet, see TODO in Renderer
 #if BX_PLATFORM_WINDOWS
-    ImGui_ImplSDL2_InitForD3D(p_window);
+    ImGui_ImplSDL2_InitForD3D(p_renderer->p_window);
 #elif BX_PLATFORM_OSX
     ImGui_ImplSDL2_InitForMetal(p_window);
 #elif BX_PLATFORM_LINUX || BX_PLATFORM_EMSCRIPTEN
@@ -36,10 +39,10 @@ void GUI::setup(SDL_Window* p_window) {
 
 void GUI::fileDialog(std::string& outPathStr, nfdresult_t& result) {
     nfdu8char_t* outPath;
-    nfdu8filteritem_t filters[2] = { { "GLTF File", "gltf" }, { "", "" } };
+    nfdu8filteritem_t filters[1] = { { "GLTF File", "gltf,glb" } };
     nfdopendialogu8args_t args = {0};
     args.filterList = filters;
-    args.filterCount = 2;
+    args.filterCount = 1;
     result = NFD_OpenDialogU8_With(&outPath, &args);
     if (result == NFD_OKAY)
     {
@@ -47,13 +50,11 @@ void GUI::fileDialog(std::string& outPathStr, nfdresult_t& result) {
         fmt::println(outPath);
         
         outPathStr = std::string(outPath);
-        fileStatus = "Success " + outPathStr;
 
         NFD_FreePathU8(outPath);
     }
     else if (result == NFD_CANCEL)
     {
-        fileStatus = "Canceled";
         fmt::println("User pressed cancel.");
     }
     else 
@@ -74,15 +75,19 @@ void GUI::update() {
         nfdresult_t result;
         std::string path;
         fileDialog(path, result);
-        if (result == NFD_OKAY) {
+
+        std::string ext = FileOps::getFilePathExtension(path);
+        if (result == NFD_OKAY && (ext.compare("gltf") == 0 || ext.compare("glb") == 0)) {
             GltfLoader g(path, p_renderer);
             p_renderer->postImportAddToSceneTree();
+            fileStatus = "Model loaded: " + path;
+        } else {
+            fileStatus = "Invalid file: " + path;
         }
     }
     
     ImGui::Render();
     ImGui_Implbgfx_RenderDrawLists(ImGui::GetDrawData());
-
 }
 
 void GUI::cleanup() {

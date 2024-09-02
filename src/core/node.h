@@ -8,9 +8,8 @@
 namespace SimpleEngine {
 
 class Node {
-private:
-    bool dirty = false;
 
+protected:
     float rotationMatrix[16];
     float scaleMatrix[16];
     float translationMatrix[16];
@@ -19,11 +18,13 @@ private:
     double scale[3];
     double translation[3];
 
+private:
+    bool dirty = false;
+
     void setDirty();
     void cleanTransformsProcess(Node* node);
 
 public:
-
     std::string name;
 
     float globalTransform[16];

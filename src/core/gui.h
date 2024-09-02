@@ -23,10 +23,10 @@ private:
 public:
     GUI();
 
-    // how do we ensure this is set?
+    // we ensure this is set through an assert in setup
     Renderer* p_renderer;
 
-    void setup(SDL_Window* p_window);
+    void setup();
     void cleanup();
     void update();
 };

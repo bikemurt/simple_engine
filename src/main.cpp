@@ -10,7 +10,7 @@ int main(int argc, char **argv) {
 	// big modules live in main for memory
 	GUI gui;
 
-	// the plan is to do dependency injection for most things into the renderer
+	// GUI's setup/update/cleanup calls are embedded into renderer
 	Renderer renderer(gui);
 	
 	// mutual coupling seems horrendous
